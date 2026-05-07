@@ -18,17 +18,15 @@
   --border:#d8d7d5;--border2:#c8c7c5;
   --stone:#8a8a88;--ink:#1a1a1a;--ink-lt:#4a4a48;
   --putty:#9a9a98;--red:#b33a2d;--white:#fafafa;
-  --green:#2d7a52;--orange:#c47a1a;
+  --green:#2d7a52;--orange:#c47a1a;--pink:#c4559a;
 }
 html,body{width:100%;height:100%;background:var(--bg);overflow:hidden;}
 body{font-family:'DM Sans',sans-serif;color:var(--ink);}
 #app{width:100vw;height:100vh;display:flex;flex-direction:column;overflow:hidden;}
 .screen{display:none;width:100%;flex:1;min-height:0;overflow:hidden;}
 .screen.active{display:flex;flex-direction:column;}
-
-/* TOPBAR */
 .topbar{background:var(--ink);display:flex;align-items:center;padding:0 20px;height:56px;flex-shrink:0;gap:12px;}
-.topbar-logo{height:42px;width:auto;}
+.topbar-logo{height:44px;width:auto;}
 .topbar-wordmark{font-family:'DM Serif Display',serif;font-size:21px;font-style:italic;color:#f0efed;}
 .topbar-sub{font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#555;}
 .sync-wrap{display:flex;align-items:center;gap:5px;margin-left:auto;}
@@ -36,8 +34,6 @@ body{font-family:'DM Sans',sans-serif;color:var(--ink);}
 .sync-dot.ok{background:#4a9d6f;}.sync-dot.err{background:#b33a2d;}.sync-dot.busy{background:#c4a44a;animation:pulse 1s infinite;}
 .sync-lbl{font-size:9px;color:#555;}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-
-/* BACK BAR */
 .backbar{background:var(--ink);display:flex;align-items:center;padding:0 16px;height:44px;flex-shrink:0;gap:10px;}
 .back-btn{background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:11px;color:#666;padding:0;}
 .back-btn:hover{color:#bbb;}
@@ -45,30 +41,23 @@ body{font-family:'DM Sans',sans-serif;color:var(--ink);}
 .backbar-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
 .pill-btn{padding:5px 13px;background:transparent;border:1px solid #3a3a3a;border-radius:100px;font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;color:#999;cursor:pointer;}
 .pill-btn:hover,.pill-btn.dark{background:rgba(255,255,255,.09);border-color:#555;color:#ccc;}
-
-/* HOME */
 .home-content{flex:1;overflow-y:auto;padding:28px 24px 60px;}
-.section-hd{font-size:9px;font-weight:600;letter-spacing:2.5px;text-transform:uppercase;color:var(--stone);margin-bottom:14px;}
 .teams-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px;}
 .team-tile{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:16px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0;transition:all .15s;overflow:hidden;}
 .team-tile:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,.07);}
 .team-tile img{width:100%;max-width:140px;height:auto;object-fit:contain;}
-.team-abbr-fallback{width:70px;height:70px;border-radius:50%;background:var(--ink);display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:18px;font-style:italic;color:white;}
+.team-abbr-fb{width:70px;height:70px;border-radius:50%;background:var(--ink);display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:18px;font-style:italic;color:white;}
 .all-tile{background:var(--ink);border:1px solid #2a2a2a;border-radius:14px;padding:20px 14px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:10px;transition:all .15s;text-align:center;}
 .all-tile:hover{background:#252525;transform:translateY(-2px);}
 .all-icon{width:64px;height:64px;border-radius:50%;background:#222;border:2px solid #333;display:flex;align-items:center;justify-content:center;font-size:24px;}
 .all-name{font-size:11px;font-weight:600;color:#ddd;letter-spacing:1px;text-transform:uppercase;}
 .all-sub{font-size:10px;color:#555;}
-
-/* TEAM VIEW */
 .team-body{flex:1;display:flex;min-height:0;overflow:hidden;}
 .team-nav{width:190px;flex-shrink:0;background:var(--ink);padding:14px;display:flex;flex-direction:column;overflow-y:auto;}
 .team-logo-sidebar{width:140px;margin:0 auto 16px;display:block;}
 .team-nav-btn{background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#555;text-align:left;padding:9px 0;border-bottom:1px solid #222;width:100%;}
 .team-nav-btn.active{color:#ccc;}
 .team-content{flex:1;display:flex;min-height:0;overflow:hidden;}
-
-/* FULLOUT LAYOUT */
 .fo-wrap{display:flex;flex:1;min-height:0;overflow:hidden;}
 .fo-left{width:190px;flex-shrink:0;background:#111;padding:12px;display:flex;flex-direction:column;gap:8px;overflow-y:auto;border-right:1px solid #222;}
 .fo-right{flex:1;background:var(--bg);overflow-y:auto;padding:18px 22px 60px;}
@@ -77,8 +66,6 @@ body{font-family:'DM Sans',sans-serif;color:var(--ink);}
 .fo-session-date{font-family:'DM Serif Display',serif;font-size:13px;font-style:italic;color:#bbb;}
 .fo-session-cnt{font-size:10px;color:#444;margin-top:2px;}
 .add-fo-btn{width:100%;padding:8px;background:rgba(255,255,255,.06);border:1px solid #2a2a2a;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;color:#aaa;cursor:pointer;}
-
-/* CARDS */
 .fo-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:14px;}
 .fo-card-hd{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--panel);border-bottom:1px solid var(--border);}
 .fo-card-title{font-family:'DM Serif Display',serif;font-size:17px;font-style:italic;}
@@ -86,9 +73,6 @@ body{font-family:'DM Sans',sans-serif;color:var(--ink);}
 .fo-lbl{font-size:8px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--stone);margin-bottom:5px;}
 .fo-inp{width:100%;padding:8px 10px;background:var(--panel);border:1px solid var(--border);border-radius:7px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--ink);outline:none;}
 .fo-ta{width:100%;padding:8px 10px;background:var(--panel);border:1px solid var(--border);border-radius:7px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--ink);outline:none;resize:vertical;line-height:1.5;}
-.fo-ta::placeholder,.fo-inp::placeholder{color:var(--stone);opacity:.6;}
-
-/* DEDUCTIONS */
 .ded-row{display:flex;flex-direction:column;gap:4px;padding:8px 10px;border-bottom:1px solid var(--border);}
 .ded-top{display:flex;align-items:center;gap:6px;}
 .ded-tag{background:var(--panel);border:1px solid var(--border);border-radius:5px;padding:3px 8px;font-size:10px;font-weight:600;color:var(--ink-lt);white-space:nowrap;}
@@ -104,32 +88,25 @@ body{font-family:'DM Sans',sans-serif;color:var(--ink);}
 .ded-menu-opt:last-child{border-bottom:none;}
 .ded-menu-opt:hover{background:var(--panel);}
 .opt-pts{font-size:11px;font-weight:700;color:var(--red);}
-
-/* PROBLEMS */
 .prob-item{display:flex;align-items:flex-start;gap:8px;padding:7px 10px;border-bottom:1px solid var(--border);}
 .prob-item:last-child{border-bottom:none;}
 .prob-chk{width:18px;height:18px;border:1.5px solid var(--border);border-radius:3px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:1px;}
-.prob-chk.done{background:var(--green);border-color:var(--green);}
+.prob-chk.done{background:var(--pink);border-color:var(--pink);}
 .prob-chk.done::after{content:'';width:4px;height:8px;border:2px solid white;border-top:none;border-left:none;transform:rotate(45deg);display:block;margin-top:-2px;}
 .prob-txt{flex:1;font-size:12px;color:var(--ink);}
 .prob-item.done .prob-txt{text-decoration:line-through;color:var(--stone);}
 .prob-rem{background:none;border:none;cursor:pointer;color:var(--stone);font-size:10px;padding:2px 4px;margin-left:auto;}
-
-/* CHECKLIST */
 .add-row{display:flex;gap:8px;margin-bottom:14px;}
 .add-inp{flex:1;padding:8px 10px;background:var(--panel);border:1px solid var(--border);border-radius:7px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--ink);outline:none;}
 .add-btn{padding:8px 14px;background:var(--ink);color:white;border:none;border-radius:7px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;}
 .cl-item{display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:var(--white);border:1px solid var(--border);border-radius:8px;margin-bottom:7px;}
 .cl-item.done{opacity:.55;}
 .chk-box{width:20px;height:20px;border:1.5px solid var(--border);border-radius:4px;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-top:1px;}
-.chk-box.ticked{background:var(--green);border-color:var(--green);}
+.chk-box.ticked{background:var(--pink);border-color:var(--pink);}
 .chk-box.ticked::after{content:'';width:5px;height:9px;border:2px solid white;border-top:none;border-left:none;transform:rotate(45deg);display:block;margin-top:-2px;}
 .cl-text{flex:1;font-size:12px;line-height:1.4;}
 .cl-item.done .cl-text{text-decoration:line-through;color:var(--stone);}
 .cl-rem{background:none;border:none;cursor:pointer;color:var(--stone);font-size:11px;padding:2px 6px;}
-.cl-rem:hover{color:var(--red);}
-
-/* BUILDER */
 .builder-wrap{display:flex;flex:1;min-height:0;overflow:hidden;}
 .builder-left{width:240px;flex-shrink:0;background:var(--ink);overflow-y:auto;}
 .builder-right{flex:1;background:var(--surface);overflow-y:auto;}
@@ -137,7 +114,6 @@ body{font-family:'DM Sans',sans-serif;color:var(--ink);}
 .prog-track{height:4px;background:#2a2a2a;border-radius:100px;overflow:hidden;}
 .prog-fill{height:100%;border-radius:100px;transition:width .3s;}
 .prog-meta{display:flex;justify-content:space-between;font-size:10px;color:#666;}
-.prog-meta .over{color:var(--red);font-weight:600;}
 .cat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;}
 .cat-chip{background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:8px 4px;font-family:'DM Sans',sans-serif;font-size:10px;color:var(--ink-lt);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;line-height:1.2;}
 .cat-chip.sel{background:var(--white);border-color:var(--ink);color:var(--ink);font-weight:600;}
@@ -163,10 +139,8 @@ body{font-family:'DM Sans',sans-serif;color:var(--ink);}
 .lbl-xs{font-size:8.5px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--stone);}
 .panel{padding:18px;display:flex;flex-direction:column;gap:14px;}
 .field-block{display:flex;flex-direction:column;gap:7px;}
-
-/* PLAN VIEW */
 .plan-wrap{display:flex;flex:1;min-height:0;overflow:hidden;}
-.plan-sidebar{width:200px;flex-shrink:0;background:var(--ink);overflow-y:auto;}
+.plan-sidebar{width:210px;flex-shrink:0;background:var(--ink);overflow-y:auto;}
 .plan-sidebar .lbl{color:#555;}
 .plan-main{flex:1;background:var(--bg);overflow-y:auto;}
 .plan-inner{padding:16px 18px 60px;display:flex;flex-direction:column;gap:12px;}
@@ -174,10 +148,11 @@ body{font-family:'DM Sans',sans-serif;color:var(--ink);}
 .attend-item{display:flex;align-items:center;gap:7px;padding:5px 8px;border-radius:5px;cursor:pointer;user-select:none;border:1px solid transparent;}
 .attend-item.on{background:#1e1e1e;border-color:#2e2e2e;}
 .tick{width:14px;height:14px;border:1.5px solid #3a3a3a;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:8px;color:#666;font-weight:700;flex-shrink:0;}
-.attend-item.on .tick{border-color:#555;color:#999;}
+.attend-item.on .tick{border-color:var(--pink);color:var(--pink);}
 .aname{font-size:11px;color:#777;}
 .attend-item.on .aname{color:#bbb;}
 .plan-block{background:var(--surface);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.plan-block.active-timer{border-color:var(--pink);box-shadow:0 0 0 2px rgba(196,85,154,.2);}
 .plan-block-hd{display:flex;justify-content:space-between;align-items:center;padding:8px 13px;background:var(--panel);border-bottom:1px solid var(--border);}
 .blk-lft{display:flex;align-items:center;gap:8px;}
 .blk-num{font-family:'DM Serif Display',serif;font-size:16px;font-style:italic;color:var(--border2);}
@@ -196,8 +171,6 @@ body{font-family:'DM Sans',sans-serif;color:var(--ink);}
 .stunt-inp{width:54px;padding:4px 5px;background:var(--panel);border:1px solid var(--border);border-radius:5px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;color:var(--ink);text-align:center;outline:none;display:block;margin:0 auto;}
 .plan-ta{width:100%;padding:7px 10px;background:var(--surface);border:1px solid var(--border);border-radius:7px;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--ink);outline:none;resize:vertical;line-height:1.5;}
 .end-mark{text-align:center;padding:24px;font-size:9px;letter-spacing:2.5px;text-transform:uppercase;color:var(--border);}
-
-/* ANALYTICS */
 .analytics-body{flex:1;overflow-y:auto;padding:20px 24px 60px;}
 .analytics-title{font-family:'DM Serif Display',serif;font-size:20px;font-style:italic;margin-bottom:3px;}
 .analytics-sub{font-size:11px;color:var(--stone);margin-bottom:12px;}
@@ -210,8 +183,39 @@ body{font-family:'DM Sans',sans-serif;color:var(--ink);}
 .del-btn{background:none;border:none;cursor:pointer;color:var(--stone);font-size:11px;padding:4px 8px;}
 .del-btn:hover{color:var(--red);}
 .no-data{font-size:12px;color:var(--stone);font-style:italic;padding:8px 0;}
-
-/* RESPONSIVE */
+/* TIMER */
+.timer-bar{background:var(--ink);padding:10px 16px;display:flex;align-items:center;gap:12px;flex-shrink:0;border-bottom:1px solid #2a2a2a;}
+.timer-display{font-family:'DM Serif Display',serif;font-size:24px;font-style:italic;color:white;min-width:80px;}
+.timer-display.warning{color:#e8b84b;}
+.timer-display.done{color:var(--pink);}
+.timer-btn{padding:6px 14px;border:1px solid #3a3a3a;border-radius:100px;font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;color:#999;background:transparent;cursor:pointer;}
+.timer-btn:hover{background:rgba(255,255,255,.09);color:#ddd;}
+.timer-btn.active{background:var(--pink);border-color:var(--pink);color:white;}
+.timer-label{font-size:10px;color:#555;font-weight:600;letter-spacing:1px;text-transform:uppercase;}
+.free-timer-inp{width:70px;padding:4px 8px;background:#222;border:1px solid #3a3a3a;border-radius:5px;font-family:'DM Serif Display',serif;font-size:16px;color:#ddd;text-align:center;outline:none;}
+.section-timer-btn{padding:4px 10px;border:1px solid var(--border);border-radius:100px;font-family:'DM Sans',sans-serif;font-size:9px;font-weight:600;color:var(--stone);background:transparent;cursor:pointer;white-space:nowrap;}
+.section-timer-btn.running{background:var(--pink);border-color:var(--pink);color:white;}
+.section-timer-countdown{font-size:11px;font-weight:700;color:var(--pink);min-width:40px;text-align:right;}
+/* TERM CALENDAR */
+.term-header{font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--stone);padding:6px 10px;background:var(--panel);border-bottom:1px solid var(--border);}
+.cal-week-col{text-align:center;padding:5px 4px;font-size:8px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--stone);border-right:1px solid var(--border);}
+.cal-dot{width:12px;height:12px;border-radius:50%;display:inline-block;border:1px solid rgba(0,0,0,.1);}
+.cal-dot.green{background:#2d7a52;}
+.cal-dot.orange{background:#c47a1a;}
+.cal-dot.red{background:#b33a2d;}
+.cal-dot.empty{background:var(--border);}
+/* LAST SESSION NOTES */
+.last-session-box{background:#1e1e1e;border:1px solid #2a2a2a;border-radius:8px;padding:10px 14px;margin-bottom:4px;}
+.last-session-lbl{font-size:8px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#555;margin-bottom:5px;}
+.last-session-text{font-size:11px;color:#666;line-height:1.5;font-style:italic;}
+.last-session-date{font-size:9px;color:#444;margin-top:4px;}
+/* PINK CHECKBOX */
+.pink-chk{width:20px;height:20px;border:1.5px solid var(--border);border-radius:4px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+.pink-chk.on{background:var(--pink);border-color:var(--pink);}
+.pink-chk.on::after{content:'';width:5px;height:9px;border:2px solid white;border-top:none;border-left:none;transform:rotate(45deg);display:block;margin-top:-2px;}
+.absent-chk{width:20px;height:20px;border:1.5px solid var(--border);border-radius:4px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
+.absent-chk.on{background:var(--red);border-color:var(--red);}
+.absent-chk.on::after{content:'x';color:white;font-size:10px;font-weight:700;line-height:1;}
 @media(max-width:680px){
   .teams-grid{grid-template-columns:repeat(2,1fr);}
   .team-body{flex-direction:column;}
@@ -231,34 +235,21 @@ body{font-family:'DM Sans',sans-serif;color:var(--ink);}
 </head>
 <body>
 <div id="app">
-
-<!-- HOME -->
 <div id="home" class="screen active">
   <div class="topbar">
-    <img class="topbar-logo" src="logo-eod.png" alt="EOD Allstars" onerror="this.style.display='none';document.getElementById('topbar-text').style.display='flex'"/>
-    <div id="topbar-text" style="display:none;flex-direction:column;gap:1px">
-      <div class="topbar-wordmark">EOD Allstars</div>
-      <div class="topbar-sub">fullout tracker</div>
-    </div>
-    <div class="sync-wrap">
-      <div class="sync-dot busy" id="home-sync-dot"></div>
-      <span class="sync-lbl" id="home-sync-lbl">connecting</span>
-    </div>
+    <img class="topbar-logo" src="logo-eod.png" alt="EOD" onerror="this.style.display='none';document.getElementById('eod-text').style.display='flex'"/>
+    <div id="eod-text" style="display:none;flex-direction:column;gap:1px"><div class="topbar-wordmark">EOD Allstars</div><div class="topbar-sub">fullout tracker</div></div>
+    <div class="sync-wrap"><div class="sync-dot busy" id="home-sync-dot"></div><span class="sync-lbl" id="home-sync-lbl">connecting</span></div>
   </div>
   <div class="home-content">
     <div class="teams-grid" id="teams-grid"></div>
   </div>
 </div>
-
-<!-- TEAM VIEW -->
 <div id="team-view" class="screen">
   <div class="backbar">
     <button class="back-btn" onclick="goHome()">&#8592; all teams</button>
     <span class="backbar-title" id="team-view-title"></span>
-    <div class="backbar-right">
-      <div class="sync-dot" id="team-sync-dot"></div>
-      <span style="font-size:10px;color:#555" id="team-sync-lbl"></span>
-    </div>
+    <div class="backbar-right"><div class="sync-dot" id="team-sync-dot"></div><span style="font-size:10px;color:#555" id="team-sync-lbl"></span></div>
   </div>
   <div class="team-body">
     <div class="team-nav" id="team-nav">
@@ -271,81 +262,67 @@ body{font-family:'DM Sans',sans-serif;color:var(--ink);}
     <div class="team-content" id="team-content"></div>
   </div>
 </div>
-
-<!-- BUILDER -->
 <div id="builder" class="screen">
   <div class="backbar">
     <button class="back-btn" onclick="goBackToTeam()">&#8592; back</button>
     <span class="backbar-title" id="b-hd-title"></span>
-    <div class="backbar-right">
-      <div class="sync-dot" id="builder-sync-dot"></div>
-      <span style="font-size:10px;color:#555" id="builder-sync-lbl"></span>
-      <button class="pill-btn dark" onclick="savePlan()">save plan</button>
-    </div>
+    <div class="backbar-right"><div class="sync-dot" id="builder-sync-dot"></div><span style="font-size:10px;color:#555" id="builder-sync-lbl"></span><button class="pill-btn dark" onclick="savePlan()">save plan</button></div>
   </div>
   <div class="builder-wrap">
     <div class="builder-left">
       <div class="panel">
-        <div class="field-block">
-          <label class="lbl">class date</label>
-          <input type="date" class="dark-inp" id="b-date" oninput="onDateChange()"/>
-          <div style="font-size:10px;color:#666;margin-top:2px" id="b-date-prev"></div>
-        </div>
-        <div class="field-block">
-          <label class="lbl">time</label>
-          <div class="prog-track"><div class="prog-fill" id="b-prog" style="width:0%"></div></div>
-          <div class="prog-meta"><span id="b-used">0 min</span><span id="b-total"></span></div>
-        </div>
+        <div class="field-block"><label class="lbl">class date</label><input type="date" class="dark-inp" id="b-date" oninput="onDateChange()"/><div style="font-size:10px;color:#666;margin-top:2px" id="b-date-prev"></div></div>
+        <div class="field-block"><label class="lbl">time</label><div class="prog-track"><div class="prog-fill" id="b-prog" style="width:0%"></div></div><div class="prog-meta"><span id="b-used">0 min</span><span id="b-total"></span></div></div>
       </div>
     </div>
     <div class="builder-right">
       <div class="panel">
-        <div class="field-block">
-          <label class="lbl">add section</label>
-          <div class="cat-grid" id="cat-grid"></div>
-          <button class="btn-outline" id="add-sec-btn" onclick="addSection()" disabled>add to plan</button>
-        </div>
-        <div class="field-block" id="sections-wrap" style="display:none">
-          <label class="lbl">plan order</label>
-          <div id="sections-list"></div>
-        </div>
+        <div class="field-block"><label class="lbl">add section</label><div class="cat-grid" id="cat-grid"></div><button class="btn-outline" id="add-sec-btn" onclick="addSection()" disabled>add to plan</button></div>
+        <div class="field-block" id="sections-wrap" style="display:none"><label class="lbl">plan order</label><div id="sections-list"></div></div>
       </div>
     </div>
   </div>
 </div>
-
-<!-- PLAN VIEW -->
 <div id="plan-view" class="screen">
   <div class="backbar">
     <button class="back-btn" onclick="goBackToTeam()">&#8592; back</button>
     <span class="backbar-title" id="p-hd-title"></span>
-    <div class="backbar-right">
-      <div class="sync-dot" id="plan-sync-dot"></div>
-      <span style="font-size:10px;color:#555" id="plan-sync-lbl"></span>
-      <button class="pill-btn" onclick="editPlan()">edit</button>
+    <div class="backbar-right"><div class="sync-dot" id="plan-sync-dot"></div><span style="font-size:10px;color:#555" id="plan-sync-lbl"></span><button class="pill-btn" onclick="editPlan()">edit</button></div>
+  </div>
+  <div class="timer-bar" id="timer-bar">
+    <div>
+      <div class="timer-label">free timer</div>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:3px">
+        <input class="free-timer-inp" id="free-timer-inp" value="1:00" placeholder="1:00"/>
+        <button class="timer-btn" id="free-timer-btn" onclick="toggleFreeTimer()">start</button>
+        <button class="timer-btn" onclick="resetFreeTimer()">reset</button>
+        <div class="timer-display" id="free-timer-display">--</div>
+      </div>
+    </div>
+    <div style="width:1px;height:36px;background:#2a2a2a;margin:0 4px"></div>
+    <div>
+      <div class="timer-label">section timer</div>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:3px">
+        <div class="timer-display" id="section-timer-display">--</div>
+        <span id="section-timer-label" style="font-size:10px;color:#555"></span>
+        <button class="timer-btn" id="section-stop-btn" onclick="stopSectionTimer()" style="display:none">stop</button>
+      </div>
     </div>
   </div>
   <div class="plan-wrap">
     <div class="plan-sidebar">
       <div class="panel">
-        <div>
-          <div style="font-size:10px;color:#666;margin-bottom:2px" id="p-time"></div>
-          <div style="font-size:10px;color:#777" id="p-date"></div>
-          <div style="display:inline-block;margin-top:6px;background:#222;border-radius:100px;padding:3px 10px;font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#777" id="p-dur"></div>
-        </div>
-        <div>
-          <div class="lbl" style="margin-bottom:6px">attendance</div>
-          <div class="attend-list" id="attend-list"></div>
+        <div><div style="font-size:10px;color:#666;margin-bottom:2px" id="p-time"></div><div style="font-size:10px;color:#777" id="p-date"></div><div style="display:inline-block;margin-top:6px;background:#222;border-radius:100px;padding:3px 10px;font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#777" id="p-dur"></div></div>
+        <div><div class="lbl" style="margin-bottom:6px">attendance</div><div class="attend-list" id="attend-list"></div></div>
+        <div id="last-session-wrap" style="display:none">
+          <div class="lbl" style="margin-bottom:6px">last session notes</div>
+          <div id="last-session-content"></div>
         </div>
       </div>
     </div>
-    <div class="plan-main">
-      <div class="plan-inner" id="plan-sections"></div>
-    </div>
+    <div class="plan-main"><div class="plan-inner" id="plan-sections"></div></div>
   </div>
 </div>
-
-<!-- ALL ANALYTICS -->
 <div id="all-analytics" class="screen">
   <div class="backbar">
     <button class="back-btn" onclick="goHome()">&#8592; all teams</button>
@@ -353,124 +330,71 @@ body{font-family:'DM Sans',sans-serif;color:var(--ink);}
   </div>
   <div class="analytics-body" id="all-analytics-content"></div>
 </div>
-
-</div><!-- #app -->
-
+</div>
 <script>
-// ── FIREBASE ──
-firebase.initializeApp({
-  apiKey:"REPLACE_API_KEY",
-  authDomain:"eod-allstars.firebaseapp.com",
-  projectId:"eod-allstars",
-  storageBucket:"eod-allstars.appspot.com",
-  messagingSenderId:"951318632359",
-  appId:"REPLACE_APP_ID"
-});
+firebase.initializeApp({apiKey:"REPLACE_API_KEY",authDomain:"eod-allstars.firebaseapp.com",projectId:"eod-allstars",storageBucket:"eod-allstars.appspot.com",messagingSenderId:"951318632359",appId:"REPLACE_APP_ID"});
 const db=firebase.firestore();
 
-// ── TEAM DATA ──
-const TEAMS=[
-  {
-    id:"tiny_diamonds",name:"Tiny Diamonds",abbr:"TD",logo:"logo-tiny-diamonds.png",
-    athletes:["Zara","Lily","Mia","Sophie","Grace","Ella","Chloe"],
-    stunts:2,
-    templates:{
-      tuesday:{id:"tuesday",display:"Tuesday",time:"5:00 pm - 6:45 pm",duration:105},
-      thursday:{id:"thursday",display:"Thursday",time:"6:00 pm - 7:30 pm",duration:90}
-    }
-  },
-  {
-    id:"lil_leopards",name:"Lil Leopards",abbr:"LL",logo:"logo-lil-leopards.png",
-    athletes:["Ava","Ruby","Isla","Freya","Poppy","Daisy","Rose"],
-    stunts:2,
-    templates:{
-      tuesday:{id:"tuesday",display:"Tuesday",time:"5:00 pm - 6:45 pm",duration:105},
-      thursday:{id:"thursday",display:"Thursday",time:"6:00 pm - 7:30 pm",duration:90}
-    }
-  },
-  {
-    id:"cheetahs",name:"Cheetahs",abbr:"CH",logo:"logo-cheetahs.png",
-    athletes:["Sadie","Telki","Myla","Lil","Lucy"],
-    stunts:2,
-    tossesLabel:"Opening",
-    templates:{
-      tuesday:{id:"tuesday",display:"Tuesday",time:"5:00 pm - 6:45 pm",duration:105},
-      thursday:{id:"thursday",display:"Thursday",time:"6:00 pm - 7:30 pm",duration:90}
-    }
-  },
-  {
-    id:"ibk",name:"IBK",abbr:"IBK",logo:"logo-ibk.png",
-    athletes:["Nova","Stella","Aurora","Ivy","Pearl","Jade","Sage"],
-    stunts:2,
-    templates:{
-      tuesday:{id:"tuesday",display:"Tuesday",time:"5:00 pm - 6:45 pm",duration:105},
-      thursday:{id:"thursday",display:"Thursday",time:"6:00 pm - 7:30 pm",duration:90}
-    }
-  },
-  {
-    id:"lady_lynx",name:"Lady Lynx",abbr:"LLX",logo:"logo-lady-lynx.png",
-    athletes:["Skye","River","Quinn","Blair","Reese","Sloane","Teagan"],
-    stunts:2,
-    templates:{
-      tuesday:{id:"tuesday",display:"Tuesday",time:"5:00 pm - 6:45 pm",duration:105},
-      thursday:{id:"thursday",display:"Thursday",time:"6:00 pm - 7:30 pm",duration:90}
-    }
-  },
-  {
-    id:"savage_katz",name:"Savage Katz",abbr:"SK",logo:"logo-savage-katz.png",
-    athletes:["Brooke","Taylor","Jordan","Morgan","Casey","Riley","Avery"],
-    stunts:2,
-    templates:{
-      tuesday:{id:"tuesday",display:"Tuesday",time:"5:00 pm - 6:45 pm",duration:105},
-      thursday:{id:"thursday",display:"Thursday",time:"6:00 pm - 7:30 pm",duration:90}
-    }
-  },
-  {
-    id:"claw_katz",name:"Claw Katz",abbr:"CK",logo:"logo-claw-katz.png",
-    athletes:["Paige","Hailey","Bailey","Kaylee","Hayley","Miley","Kylie"],
-    stunts:2,
-    templates:{
-      tuesday:{id:"tuesday",display:"Tuesday",time:"5:00 pm - 6:45 pm",duration:105},
-      thursday:{id:"thursday",display:"Thursday",time:"6:00 pm - 7:30 pm",duration:90}
-    }
-  },
-  {
-    id:"diamonds",name:"Diamonds",abbr:"DIA",logo:"logo-diamonds.png",
-    athletes:["Scarlett","Violet","Iris","Danika","Petra","Sonia","Vera"],
-    stunts:2,
-    templates:{
-      tuesday:{id:"tuesday",display:"Tuesday",time:"5:00 pm - 6:45 pm",duration:105},
-      thursday:{id:"thursday",display:"Thursday",time:"6:00 pm - 7:30 pm",duration:90}
-    }
-  },
-  {
-    id:"pink_panthers",name:"Pink Panthers",abbr:"PP",logo:"logo-pink-panthers.png",
-    athletes:["Maya","Layla","Kayla","Nadia","Talia","Delia","Celia"],
-    stunts:2,
-    templates:{
-      tuesday:{id:"tuesday",display:"Tuesday",time:"5:00 pm - 6:45 pm",duration:105},
-      thursday:{id:"thursday",display:"Thursday",time:"6:00 pm - 7:30 pm",duration:90}
-    }
-  },
-  {
-    id:"miss_purrfect",name:"Miss Purrfect",abbr:"MP",logo:"logo-miss-purrfect.png",
-    athletes:["Mil","Maggie","Phoenix","Sofia","Daisy","Keeley","Lillie","Airlie"],
-    stunts:2,
-    tossesLabel:"Opening",
-    templates:{
-      tuesday:{id:"tuesday",display:"Tuesday",time:"7:30 pm - 9:00 pm",duration:90},
-      thursday:{id:"thursday",display:"Thursday",time:"7:30 pm - 9:00 pm",duration:90}
-    }
-  },
-  {
-    id:"pink_kitties",name:"Pink Kitties",abbr:"PK",logo:"logo-pink-kitties.png",
-    athletes:["Makkie","Ada","Ivy","Zara","Scarlett","Mia"],
-    stunts:1,
-    templates:{
-      tuesday:{id:"tuesday",display:"Tuesday",time:"4:00 pm - 5:30 pm",duration:90},
-      wednesday:{id:"wednesday",display:"Wednesday",time:"4:00 pm - 6:00 pm",duration:120}
-    }
+// ── TERM CALENDAR SETUP ──
+// Term 2: Week 4 starts May 4, ends Jul 4 (week 10 = Jun 29-Jul 5)
+// Term 3: starts Jul 6, ends Sep 26
+// Term 4: starts Oct 5, ends Dec 13
+const TERM_WEEKS=[];
+function addWeeks(termName,startDate,count){
+  for(let i=0;i<count;i++){
+    const d=new Date(startDate);d.setDate(d.getDate()+i*7);
+    TERM_WEEKS.push({term:termName,week:i+1,startDate:new Date(d)});
   }
+}
+addWeeks("T2",new Date("2026-05-04"),7); // T2 W4-W10
+addWeeks("T3",new Date("2026-07-06"),12); // T3 W1-W12
+addWeeks("T4",new Date("2026-10-05"),11); // T4 W1-W11
+
+// ── TEAMS ──
+const TEAMS=[
+  {id:"tiny_diamonds",name:"Tiny Diamonds",abbr:"TD",logo:"logo-tiny-diamonds.png",
+   stunts:[{id:"stunt1",label:"Main Stunt",athletes:["Zara","Lily","Mia","Sophie","Grace","Ella","Chloe"]},{id:"stunt2",label:"2nd Stunt",athletes:["Zara","Lily","Mia","Sophie","Grace","Ella","Chloe"]}],
+   templates:{tuesday:{id:"tuesday",display:"Tuesday",time:"5:00 pm - 6:45 pm",duration:105},thursday:{id:"thursday",display:"Thursday",time:"6:00 pm - 7:30 pm",duration:90}}},
+  {id:"lil_leopards",name:"Lil Leopards",abbr:"LL",logo:"logo-lil-leopards.png",
+   stunts:[{id:"stunt1",label:"Main Stunt",athletes:["Ava","Ruby","Isla","Freya","Poppy","Daisy","Rose"]},{id:"stunt2",label:"2nd Stunt",athletes:["Ava","Ruby","Isla","Freya","Poppy","Daisy","Rose"]}],
+   templates:{tuesday:{id:"tuesday",display:"Tuesday",time:"5:00 pm - 6:45 pm",duration:105},thursday:{id:"thursday",display:"Thursday",time:"6:00 pm - 7:30 pm",duration:90}}},
+  {id:"cheetahs",name:"Cheetahs",abbr:"CH",logo:"logo-cheetahs.png",tossesLabel:"Opening",
+   stunts:[
+     {id:"stunt1",label:"1st Stunt",athletes:["Sadie","Telki","Myla","Lil"]},
+     {id:"stunt2",label:"2nd Stunt",athletes:["Lucy","Lil","Myla","Sadie"]}
+   ],
+   templates:{tuesday:{id:"tuesday",display:"Tuesday",time:"5:00 pm - 6:45 pm",duration:105},thursday:{id:"thursday",display:"Thursday",time:"6:00 pm - 7:30 pm",duration:90}}},
+  {id:"ibk",name:"IBK",abbr:"IBK",logo:"logo-ibk.png",
+   stunts:[{id:"stunt1",label:"Main Stunt",athletes:["Nova","Stella","Aurora","Ivy","Pearl","Jade","Sage"]},{id:"stunt2",label:"2nd Stunt",athletes:["Nova","Stella","Aurora","Ivy","Pearl","Jade","Sage"]}],
+   templates:{tuesday:{id:"tuesday",display:"Tuesday",time:"5:00 pm - 6:45 pm",duration:105},thursday:{id:"thursday",display:"Thursday",time:"6:00 pm - 7:30 pm",duration:90}}},
+  {id:"lady_lynx",name:"Lady Lynx",abbr:"LLX",logo:"logo-lady-lynx.png",
+   stunts:[{id:"stunt1",label:"Main Stunt",athletes:["Skye","River","Quinn","Blair","Reese","Sloane","Teagan"]},{id:"stunt2",label:"2nd Stunt",athletes:["Skye","River","Quinn","Blair","Reese","Sloane","Teagan"]}],
+   templates:{tuesday:{id:"tuesday",display:"Tuesday",time:"5:00 pm - 6:45 pm",duration:105},thursday:{id:"thursday",display:"Thursday",time:"6:00 pm - 7:30 pm",duration:90}}},
+  {id:"savage_katz",name:"Savage Katz",abbr:"SK",logo:"logo-savage-katz.png",tossesLabel:"Opening",
+   stunts:[
+     {id:"stunt1",label:"2 Mans",athletes:["Bella","Harper","Myah","Jess","Billie","Meadow"]},
+     {id:"stunt2",label:"Main Stunt",athletes:["Bella","Harper","Myah","Billie"]}
+   ],
+   templates:{thursday:{id:"thursday",display:"Thursday",time:"7:30 pm - 9:00 pm",duration:90},friday:{id:"friday",display:"Friday",time:"5:15 pm - 6:45 pm",duration:90}}},
+  {id:"claw_katz",name:"Claw Katz",abbr:"CK",logo:"logo-claw-katz.png",
+   stunts:[{id:"stunt1",label:"Main Stunt",athletes:["Paige","Hailey","Bailey","Kaylee","Hayley","Miley","Kylie"]},{id:"stunt2",label:"2nd Stunt",athletes:["Paige","Hailey","Bailey","Kaylee","Hayley","Miley","Kylie"]}],
+   templates:{tuesday:{id:"tuesday",display:"Tuesday",time:"5:00 pm - 6:45 pm",duration:105},thursday:{id:"thursday",display:"Thursday",time:"6:00 pm - 7:30 pm",duration:90}}},
+  {id:"diamonds",name:"Diamonds",abbr:"DIA",logo:"logo-diamonds.png",
+   stunts:[{id:"stunt1",label:"Main Stunt",athletes:["Amarni","Vogue","Maci","Emma","Freyah"]}],
+   templates:{monday:{id:"monday",display:"Monday",time:"4:00 pm - 5:45 pm",duration:105},wednesday:{id:"wednesday",display:"Wednesday",time:"4:00 pm - 6:00 pm",duration:120}}},
+  {id:"pink_panthers",name:"Pink Panthers",abbr:"PP",logo:"logo-pink-panthers.png",
+   stunts:[{id:"stunt1",label:"Main Stunt",athletes:["Maya","Layla","Kayla","Nadia","Talia","Delia","Celia"]},{id:"stunt2",label:"2nd Stunt",athletes:["Maya","Layla","Kayla","Nadia","Talia","Delia","Celia"]}],
+   templates:{tuesday:{id:"tuesday",display:"Tuesday",time:"5:00 pm - 6:45 pm",duration:105},thursday:{id:"thursday",display:"Thursday",time:"6:00 pm - 7:30 pm",duration:90}}},
+  {id:"miss_purrfect",name:"Miss Purrfect",abbr:"MP",logo:"logo-miss-purrfect.png",tossesLabel:"Opening",
+   stunts:[
+     {id:"stunt1",label:"1st Stunt",athletes:["Mil","Maggie","Phoenix","Sofia","Daisy"]},
+     {id:"stunt2",label:"2nd Stunt",athletes:["Mil","Maggie","Phoenix","Sofia","Daisy","Keeley","Lillie","Airlie"]}
+   ],
+   stunt1Only:["Keeley","Lillie","Airlie"],
+   templates:{tuesday:{id:"tuesday",display:"Tuesday",time:"7:30 pm - 9:00 pm",duration:90},thursday:{id:"thursday",display:"Thursday",time:"7:30 pm - 9:00 pm",duration:90}}},
+  {id:"pink_kitties",name:"Pink Kitties",abbr:"PK",logo:"logo-pink-kitties.png",
+   stunts:[{id:"stunt1",label:"Main Stunt",athletes:["Makkie","Ada","Ivy","Zara","Scarlett","Mia"]}],
+   templates:{tuesday:{id:"tuesday",display:"Tuesday",time:"4:00 pm - 5:30 pm",duration:90},wednesday:{id:"wednesday",display:"Wednesday",time:"4:00 pm - 6:00 pm",duration:120}}}
 ];
 
 const TIMES=[5,10,15,20,25,30,35,40,45,60];
@@ -481,11 +405,8 @@ const DED_TYPES=[
 
 function getCategories(team){
   const tossLabel=team.tossesLabel||"Tosses";
-  const cats=[
-    {id:"conditioning",label:"Conditioning",icon:"&#9672;"},
-    {id:"stunt1",label:"1st Stunt",icon:"&#9733;",stunt:true,stuntNum:1},
-  ];
-  if(team.stunts>=2) cats.push({id:"stunt2",label:"2nd Stunt",icon:"&#9733;",stunt:true,stuntNum:2});
+  const cats=[{id:"conditioning",label:"Conditioning",icon:"&#9672;"}];
+  (team.stunts||[]).forEach(s=>{cats.push({id:s.id,label:s.label,icon:"&#9733;",stunt:true,stuntKey:s.id});});
   cats.push(
     {id:"tosses",label:tossLabel,icon:"&#9689;"},
     {id:"jumps",label:"Jumps",icon:"&#9670;"},
@@ -503,8 +424,11 @@ function getCategories(team){
 // ── STATE ──
 let foCache={},clCache={},plansCache={};
 let curTeamId=null,curTeamTab="fullouts",curFoId=null,curPlanId=null;
-let activeDedDD=null,pickedCat=null,sections=[],curTplId=null;
-let saveTimer=null;
+let activeDedDD=null,pickedCat=null,sections=[],curTplId=null,saveTimer=null;
+// Timers
+let sectionTimerInterval=null,sectionTimerSecs=0,sectionTimerSecId=null;
+let freeTimerInterval=null,freeTimerSecs=0,freeTimerRunning=false;
+let audioCtx=null;
 
 // ── HELPERS ──
 function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2);}
@@ -513,11 +437,7 @@ function fmtDate(s){if(!s)return"";return new Date(s+"T12:00:00").toLocaleDateSt
 function fmtShort(s){if(!s)return"--";return new Date(s+"T12:00:00").toLocaleDateString("en-AU",{day:"numeric",month:"short",year:"numeric"});}
 function esc(s){return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 function showScreen(id){document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active"));document.getElementById(id).classList.add("active");}
-function sd(id,state,lbl){
-  const d=document.getElementById(id+"-sync-dot"),l=document.getElementById(id+"-sync-lbl");
-  if(d)d.className="sync-dot "+(state==="ok"?"ok":state==="err"?"err":state==="busy"?"busy":"");
-  if(l)l.textContent=lbl||"";
-}
+function sd(id,state,lbl){const d=document.getElementById(id+"-sync-dot"),l=document.getElementById(id+"-sync-lbl");if(d)d.className="sync-dot "+(state==="ok"?"ok":state==="err"?"err":state==="busy"?"busy":"");if(l)l.textContent=lbl||"";}
 function getTeam(id){return TEAMS.find(t=>t.id===id);}
 function pctCol(p){return p>=90?"#2d7a52":p>=75?"#c47a1a":"#b33a2d";}
 function foCol(tid){return db.collection("teams").doc(tid).collection("fulloutSessions");}
@@ -525,32 +445,106 @@ function clCol(tid){return db.collection("teams").doc(tid).collection("checklist
 function plansCol(tid){return db.collection("teams").doc(tid).collection("plans");}
 function getFo(){return(foCache[curTeamId]||[]).find(s=>s.id===curFoId);}
 function getPlan(id){return(plansCache[curTeamId]||[]).find(p=>p.id===(id||curPlanId));}
+function fmtSecs(s){const m=Math.floor(s/60);const sec=s%60;return m+":"+(sec<10?"0":"")+sec;}
+function parseTimerInput(val){const parts=val.split(":");if(parts.length===2){return parseInt(parts[0])*60+parseInt(parts[1]);}return parseInt(val)*60||0;}
 
 document.addEventListener("click",e=>{if(activeDedDD&&!activeDedDD.contains(e.target)){const m=activeDedDD.querySelector(".ded-menu");if(m)m.style.display="none";activeDedDD=null;}});
+
+// ── ALARM SOUND ──
+function playAlarm(){
+  try{
+    if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    [0,300,600].forEach(delay=>{
+      const osc=audioCtx.createOscillator();const gain=audioCtx.createGain();
+      osc.connect(gain);gain.connect(audioCtx.destination);
+      osc.frequency.value=880;osc.type="sine";
+      gain.gain.setValueAtTime(0.4,audioCtx.currentTime+delay/1000);
+      gain.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+delay/1000+0.5);
+      osc.start(audioCtx.currentTime+delay/1000);osc.stop(audioCtx.currentTime+delay/1000+0.5);
+    });
+  }catch(e){}
+}
+
+// ── SECTION TIMER ──
+function startSectionTimer(secs,label,secId){
+  stopSectionTimer();
+  sectionTimerSecs=secs;sectionTimerSecId=secId;
+  document.getElementById("section-timer-label").textContent=label;
+  document.getElementById("section-stop-btn").style.display="inline-block";
+  document.querySelectorAll(".plan-block").forEach(b=>b.classList.remove("active-timer"));
+  const block=document.getElementById("sec-block-"+secId);if(block)block.classList.add("active-timer");
+  // Update start buttons
+  document.querySelectorAll(".section-timer-btn").forEach(b=>{b.textContent="start";b.classList.remove("running");});
+  const btn=document.getElementById("sec-btn-"+secId);if(btn){btn.textContent="stop";btn.classList.add("running");}
+  updateSectionDisplay();
+  sectionTimerInterval=setInterval(()=>{
+    sectionTimerSecs--;updateSectionDisplay();
+    if(sectionTimerSecs<=0){stopSectionTimer();playAlarm();document.getElementById("section-timer-display").textContent="TIME!";document.getElementById("section-timer-display").className="timer-display done";}
+  },1000);
+}
+
+function stopSectionTimer(){
+  if(sectionTimerInterval){clearInterval(sectionTimerInterval);sectionTimerInterval=null;}
+  document.querySelectorAll(".plan-block").forEach(b=>b.classList.remove("active-timer"));
+  document.querySelectorAll(".section-timer-btn").forEach(b=>{b.textContent="start";b.classList.remove("running");});
+  document.getElementById("section-stop-btn").style.display="none";
+  document.getElementById("section-timer-label").textContent="";
+}
+
+function updateSectionDisplay(){
+  const el=document.getElementById("section-timer-display");if(!el)return;
+  el.textContent=fmtSecs(sectionTimerSecs);
+  el.className="timer-display"+(sectionTimerSecs<=30?" warning":"");
+}
+
+function toggleSectionTimer(secs,label,secId){
+  if(sectionTimerInterval&&sectionTimerSecId===secId){stopSectionTimer();document.getElementById("section-timer-display").textContent="--";}
+  else{startSectionTimer(secs,label,secId);}
+}
+
+// ── FREE TIMER ──
+function toggleFreeTimer(){
+  if(freeTimerRunning){clearInterval(freeTimerInterval);freeTimerRunning=false;document.getElementById("free-timer-btn").textContent="start";document.getElementById("free-timer-btn").classList.remove("active");}
+  else{
+    const val=document.getElementById("free-timer-inp").value;
+    freeTimerSecs=parseTimerInput(val);
+    if(!freeTimerSecs)return;
+    freeTimerRunning=true;
+    document.getElementById("free-timer-btn").textContent="stop";
+    document.getElementById("free-timer-btn").classList.add("active");
+    updateFreeDisplay();
+    freeTimerInterval=setInterval(()=>{
+      freeTimerSecs--;updateFreeDisplay();
+      if(freeTimerSecs<=0){clearInterval(freeTimerInterval);freeTimerRunning=false;playAlarm();document.getElementById("free-timer-display").textContent="TIME!";document.getElementById("free-timer-display").className="timer-display done";document.getElementById("free-timer-btn").textContent="start";document.getElementById("free-timer-btn").classList.remove("active");}
+    },1000);
+  }
+}
+
+function resetFreeTimer(){
+  clearInterval(freeTimerInterval);freeTimerRunning=false;freeTimerSecs=0;
+  document.getElementById("free-timer-btn").textContent="start";
+  document.getElementById("free-timer-btn").classList.remove("active");
+  document.getElementById("free-timer-display").textContent="--";
+  document.getElementById("free-timer-display").className="timer-display";
+}
+
+function updateFreeDisplay(){
+  const el=document.getElementById("free-timer-display");if(!el)return;
+  el.textContent=fmtSecs(freeTimerSecs);
+  el.className="timer-display"+(freeTimerSecs<=10?" warning":"");
+}
 
 // ── LIVE SYNC ──
 let listeners={};
 function startLiveSync(){
-  sd("home","busy","connecting");
-  let done=0;
+  sd("home","busy","connecting");let done=0;
   TEAMS.forEach(t=>{
     if(listeners[t.id+"_fo"])return;
-    listeners[t.id+"_fo"]=foCol(t.id).orderBy("date","desc").onSnapshot(snap=>{
-      foCache[t.id]=snap.docs.map(d=>d.data());
-      done++;if(done>=TEAMS.length)sd("home","ok","live");
-      renderHome();
-    },()=>sd("home","err","offline"));
-    listeners[t.id+"_cl"]=clCol(t.id).orderBy("created_at","asc").onSnapshot(snap=>{
-      clCache[t.id]=snap.docs.map(d=>d.data());
-      if(curTeamId===t.id&&curTeamTab==="checklist")renderChecklistView(document.getElementById("team-content"));
-    });
-    listeners[t.id+"_pl"]=plansCol(t.id).orderBy("updated_at","desc").onSnapshot(snap=>{
-      plansCache[t.id]=snap.docs.map(d=>d.data());
-      if(curTeamId===t.id&&curTeamTab==="plans")renderPlansView(document.getElementById("team-content"));
-    });
+    listeners[t.id+"_fo"]=foCol(t.id).orderBy("date","desc").onSnapshot(snap=>{foCache[t.id]=snap.docs.map(d=>d.data());done++;if(done>=TEAMS.length)sd("home","ok","live");renderHome();},()=>sd("home","err","offline"));
+    listeners[t.id+"_cl"]=clCol(t.id).orderBy("created_at","asc").onSnapshot(snap=>{clCache[t.id]=snap.docs.map(d=>d.data());if(curTeamId===t.id&&curTeamTab==="checklist")renderChecklistView(document.getElementById("team-content"));});
+    listeners[t.id+"_pl"]=plansCol(t.id).orderBy("updated_at","desc").onSnapshot(snap=>{plansCache[t.id]=snap.docs.map(d=>d.data());if(curTeamId===t.id&&curTeamTab==="plans")renderPlansView(document.getElementById("team-content"));});
   });
 }
-
 async function foSave(s){s.updated_at=new Date().toISOString();sd("team","busy","saving");try{await foCol(curTeamId).doc(s.id).set(s);sd("team","ok","saved");}catch{sd("team","err","failed");}}
 async function planSave(p){p.updated_at=new Date().toISOString();await plansCol(curTeamId).doc(p.id).set(p);}
 async function planDel(id){await plansCol(curTeamId).doc(id).delete();}
@@ -560,17 +554,9 @@ function renderHome(){
   const grid=document.getElementById("teams-grid");if(!grid)return;
   let html=TEAMS.map(t=>{
     const sessions=foCache[t.id]||[];
-    const totalFo=sessions.reduce((s,x)=>s+(x.fullouts?x.fullouts.length:0),0);
-    return`<div class="team-tile" onclick="openTeam('${t.id}')">
-      <img src="${t.logo}" alt="${esc(t.name)}" style="max-height:100px;width:auto;max-width:100%" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
-      <div class="team-abbr-fallback" style="display:none">${esc(t.abbr)}</div>
-    </div>`;
+    return`<div class="team-tile" onclick="openTeam('${t.id}')"><img src="${t.logo}" alt="${esc(t.name)}" style="max-height:100px;width:auto;max-width:100%" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><div class="team-abbr-fb" style="display:none">${esc(t.abbr)}</div></div>`;
   }).join("");
-  html+=`<div class="all-tile" onclick="openAllAnalytics()">
-    <div class="all-icon">&#9733;</div>
-    <div class="all-name">All Teams Analytics</div>
-    <div class="all-sub">compare & overview</div>
-  </div>`;
+  html+=`<div class="all-tile" onclick="openAllAnalytics()"><div class="all-icon">&#9733;</div><div class="all-name">All Teams Analytics</div><div class="all-sub">compare & overview</div></div>`;
   grid.innerHTML=html;
 }
 function goHome(){showScreen("home");renderHome();}
@@ -580,73 +566,74 @@ function openTeam(teamId){
   curTeamId=teamId;curFoId=null;curTeamTab="fullouts";
   const t=getTeam(teamId);
   document.getElementById("team-view-title").textContent=t.name;
-  const logo=document.getElementById("team-sidebar-logo");
-  logo.src=t.logo;logo.style.display="block";
+  const logo=document.getElementById("team-sidebar-logo");logo.src=t.logo;logo.style.display="block";
   document.querySelectorAll(".team-nav-btn").forEach(b=>b.classList.remove("active"));
   document.querySelector(".team-nav-btn").classList.add("active");
-  showScreen("team-view");
-  renderTeamTab();
+  showScreen("team-view");renderTeamTab();
 }
-function goBackToTeam(){showScreen("team-view");renderTeamTab();}
-function teamTab(tab,btn){
-  curTeamTab=tab;
-  document.querySelectorAll(".team-nav-btn").forEach(b=>b.classList.remove("active"));
-  if(btn)btn.classList.add("active");
-  renderTeamTab();
-}
-function renderTeamTab(){
-  const c=document.getElementById("team-content");if(!c)return;
-  if(curTeamTab==="fullouts")renderFoView(c);
-  else if(curTeamTab==="plans")renderPlansView(c);
-  else if(curTeamTab==="analytics")renderTeamAnalytics(c);
-  else if(curTeamTab==="checklist")renderChecklistView(c);
-}
+function goBackToTeam(){stopSectionTimer();showScreen("team-view");renderTeamTab();}
+function teamTab(tab,btn){curTeamTab=tab;document.querySelectorAll(".team-nav-btn").forEach(b=>b.classList.remove("active"));if(btn)btn.classList.add("active");renderTeamTab();}
+function renderTeamTab(){const c=document.getElementById("team-content");if(!c)return;if(curTeamTab==="fullouts")renderFoView(c);else if(curTeamTab==="plans")renderPlansView(c);else if(curTeamTab==="analytics")renderTeamAnalytics(c);else if(curTeamTab==="checklist")renderChecklistView(c);}
 
 // ── FULLOUT VIEW ──
 function renderFoView(container){
-  container.innerHTML=`<div class="fo-wrap">
-    <div class="fo-left">
-      <button class="add-fo-btn" onclick="addFoSession()">+ new session</button>
-      <div id="fo-session-list"></div>
-    </div>
-    <div class="fo-right" id="fo-right">
-      <div class="no-data" style="padding:40px 0;text-align:center">Select a session or create a new one.</div>
-    </div>
-  </div>`;
+  container.innerHTML=`<div class="fo-wrap"><div class="fo-left"><button class="add-fo-btn" onclick="addFoSession()">+ new session</button><div id="fo-session-list"></div></div><div class="fo-right" id="fo-right"><div class="no-data" style="padding:40px 0;text-align:center">Select a session or create a new one.</div></div></div>`;
   renderFoList();
 }
-
 function renderFoList(){
   const list=document.getElementById("fo-session-list");if(!list)return;
   const sessions=foCache[curTeamId]||[];
   if(!sessions.length){list.innerHTML='<div style="font-size:11px;color:#444;font-style:italic;padding:8px 0">No sessions yet.</div>';return;}
   list.innerHTML=sessions.map(s=>`<div class="fo-session-row${s.id===curFoId?" active":""}" onclick="openFoSession('${s.id}')"><div class="fo-session-date">${s.date?fmtShort(s.date):"no date"}</div><div class="fo-session-cnt">${s.fullouts?s.fullouts.length:0} fullout${s.fullouts&&s.fullouts.length!==1?"s":""}</div></div>`).join("");
 }
-
 async function addFoSession(){
-  const t=getTeam(curTeamId);
   const s={id:uid(),date:new Date().toISOString().split("T")[0],notes:"",fullouts:[]};
   sd("team","busy","saving");try{await foCol(curTeamId).doc(s.id).set(s);sd("team","ok","saved");openFoSession(s.id);}catch{sd("team","err","failed");}
 }
-
 function openFoSession(id){curFoId=id;renderFoList();renderFoRight();}
+
+function pinkChk(on,onclick){return`<div class="pink-chk${on?" on":""}" onclick="${onclick}"></div>`;}
+function absentChk(on,onclick){return`<div class="absent-chk${on?" on":""}" onclick="${onclick}" title="absent"></div>`;}
 
 function renderFoRight(){
   const el=document.getElementById("fo-right");if(!el)return;
-  const session=getFo();
-  const team=getTeam(curTeamId);
+  const session=getFo();const team=getTeam(curTeamId);
   if(!session){el.innerHTML='<div class="no-data" style="padding:40px 0;text-align:center">Select a session or create a new one.</div>';return;}
   let html=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h2 style="font-family:'DM Serif Display',serif;font-size:22px;font-style:italic">fullout session</h2><button class="del-btn" onclick="delFoSession()">delete</button></div>`;
-  html+=`<div class="fo-card"><div class="fo-card-hd"><span class="fo-card-title">session details</span></div><div class="fo-card-body">
-    <div><div class="fo-lbl">date</div><input type="date" class="fo-inp" value="${esc(session.date||"")}" oninput="updateFoField('date',this.value)"/></div>
-    <div><div class="fo-lbl">general notes</div><textarea class="fo-ta" rows="2" placeholder="overall session notes..." oninput="updateFoField('notes',this.value)">${esc(session.notes||"")}</textarea></div>
-  </div></div>`;
+  html+=`<div class="fo-card"><div class="fo-card-hd"><span class="fo-card-title">session details</span></div><div class="fo-card-body"><div><div class="fo-lbl">date</div><input type="date" class="fo-inp" value="${esc(session.date||"")}" oninput="updateFoField('date',this.value)"/></div><div><div class="fo-lbl">general notes</div><textarea class="fo-ta" rows="2" placeholder="overall session notes..." oninput="updateFoField('notes',this.value)">${esc(session.notes||"")}</textarea></div></div></div>`;
 
   if(session.fullouts){session.fullouts.forEach((fo,fi)=>{
     const foDed=fo.deductions?fo.deductions.reduce((a,d)=>a+(parseFloat(d.pts||d.points)||0),0):0;
-    const s1h=fo.stunt1Hits||{},s2h=fo.stunt2Hits||{},pyH=!!(fo.pyramidHit);
-    const athletes=team.athletes||[];
-    html+=`<div class="fo-card"><div class="fo-card-hd"><span class="fo-card-title">fullout ${String(fi+1).padStart(2,"0")}</span><button class="del-btn" onclick="removeFullout(${fi})">remove</button></div><div class="fo-card-body">
+    const pyH=!!(fo.pyramidHit);
+    // Build stunt hits table dynamically per team
+    const stunts=team.stunts||[];
+    const stunt1Only=team.stunt1Only||[];
+    // Collect all unique athletes across all stunts
+    const allAthletes=[...new Set(stunts.flatMap(s=>s.athletes))];
+
+    let stuntHtml=`<div style="border:1px solid var(--border);border-radius:8px;overflow:hidden">`;
+    // Header
+    let hdCols=stunts.map(s=>`<span style="font-size:8px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--stone);text-align:center">${esc(s.label)}</span><span style="font-size:8px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--red);text-align:center">abs</span>`).join("");
+    let hdGrid=`1fr `+stunts.map(()=>"36px 36px").join(" ");
+    stuntHtml+=`<div style="display:grid;grid-template-columns:${hdGrid};background:var(--panel);padding:5px 10px;border-bottom:1px solid var(--border)"><span style="font-size:8px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--stone)">group</span>${hdCols}</div>`;
+
+    allAthletes.forEach(name=>{
+      let rowCells=stunts.map(stunt=>{
+        const inStunt=stunt.athletes.includes(name);
+        const hitKey=stunt.id+"Hits";
+        const absKey=stunt.id+"Absent";
+        const on=inStunt&&!!(fo[hitKey]&&fo[hitKey][name]);
+        const abs=inStunt&&!!(fo[absKey]&&fo[absKey][name]);
+        if(!inStunt){return`<div></div><div></div>`;}
+        return`<div style="display:flex;justify-content:center;align-items:center">${pinkChk(on&&!abs,abs?"":"toggleStuntHit("+fi+",'"+stunt.id+"','"+name+"')")}</div><div style="display:flex;justify-content:center;align-items:center">${absentChk(abs,"toggleStuntAbsent("+fi+",'"+stunt.id+"','"+name+"')")}</div>`;
+      }).join("");
+      const rowBg=allAthletes.indexOf(name)%2===0?"var(--surface)":"transparent";
+      stuntHtml+=`<div style="display:grid;grid-template-columns:${hdGrid};align-items:center;padding:5px 10px;border-top:1px solid var(--border);background:${rowBg}"><span style="font-size:11px;font-weight:500">${esc(name)}'s group</span>${rowCells}</div>`;
+    });
+    stuntHtml+=`</div>`;
+    stuntHtml+=`<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid ${pyH?"var(--pink)":"var(--border)"};border-radius:7px;cursor:pointer;background:${pyH?"rgba(196,85,154,.08)":"transparent"};margin-top:8px" onclick="togglePyramidHit(${fi})">${pinkChk(pyH,"togglePyramidHit("+fi+")")}<span style="font-size:12px;font-weight:${pyH?"600":"400"};color:${pyH?"var(--pink)":"var(--stone)"}">pyramid hit</span></div>`;
+
+    html+=`<div class="fo-card"><div class="fo-card-hd"><span class="fo-card-title">fullout ${String(fi+1).padStart(2,"00")}</span><button class="del-btn" onclick="removeFullout(${fi})">remove</button></div><div class="fo-card-body">
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
       <div>
         <div class="fo-lbl">deductions</div>
@@ -654,55 +641,33 @@ function renderFoRight(){
         <div style="position:relative" id="dd-wrap-${fi}"><button class="add-ded-btn" onclick="toggleDD(${fi})">+ add deduction</button>
         <div class="ded-menu" id="ded-menu-${fi}" style="display:none">${DED_TYPES.map(cat=>`<div class="ded-menu-hd">${cat.cat}</div>${cat.items.map(item=>`<div class="ded-menu-opt" onclick="addDed(${fi},'${esc(item.label)}',${item.pts})"><span>${esc(item.label)}</span><span class="opt-pts">-${item.pts.toFixed(2)}</span></div>`).join("")}`).join("")}</div></div>
       </div>
-      <div>
-        <div class="fo-lbl">stunt group hits</div>
-        <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden">
-          <div style="display:grid;grid-template-columns:1fr ${team.stunts>=2?"44px 44px":"44px"};background:var(--panel);padding:5px 10px;border-bottom:1px solid var(--border)">
-            <span style="font-size:8px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:var(--stone)">group</span>
-            <span style="font-size:8px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--stone);text-align:center">st1</span>
-            ${team.stunts>=2?`<span style="font-size:8px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--stone);text-align:center">st2</span>`:""}
-          </div>
-          ${athletes.map(name=>{const o1=!!(s1h[name]),o2=!!(s2h[name]);
-            return`<div style="display:grid;grid-template-columns:1fr ${team.stunts>=2?"44px 44px":"44px"};align-items:center;padding:5px 10px;border-top:1px solid var(--border)">
-              <span style="font-size:11px;font-weight:500">${esc(name)}'s group</span>
-              <div style="display:flex;justify-content:center;cursor:pointer" onclick="toggleStuntHit(${fi},'stunt1Hits','${esc(name)}')"><div style="width:20px;height:20px;border:1.5px solid ${o1?"#4a9d6f":"var(--border)"};border-radius:4px;display:flex;align-items:center;justify-content:center;background:${o1?"#4a9d6f":"transparent"}"><span style="color:white;font-size:10px;font-weight:700">${o1?"v":""}</span></div></div>
-              ${team.stunts>=2?`<div style="display:flex;justify-content:center;cursor:pointer" onclick="toggleStuntHit(${fi},'stunt2Hits','${esc(name)}')"><div style="width:20px;height:20px;border:1.5px solid ${o2?"#4a9d6f":"var(--border)"};border-radius:4px;display:flex;align-items:center;justify-content:center;background:${o2?"#4a9d6f":"transparent"}"><span style="color:white;font-size:10px;font-weight:700">${o2?"v":""}</span></div></div>`:""}
-            </div>`;}).join("")}
-        </div>
-        <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid ${pyH?"#4a9d6f":"var(--border)"};border-radius:7px;cursor:pointer;background:${pyH?"#f0faf5":"transparent"};margin-top:8px" onclick="togglePyramidHit(${fi})">
-          <div style="width:20px;height:20px;border:1.5px solid ${pyH?"#4a9d6f":"var(--border)"};border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:${pyH?"#4a9d6f":"transparent"}"><span style="color:white;font-size:10px;font-weight:700">${pyH?"v":""}</span></div>
-          <span style="font-size:12px;font-weight:${pyH?"600":"400"};color:${pyH?"#2d7a52":"var(--stone)"}">pyramid hit</span>
-        </div>
-      </div>
+      <div><div class="fo-lbl">stunt group hits</div>${stuntHtml}</div>
     </div>
-    <div>
-      <div class="fo-lbl">problems / things to fix</div>
-      <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:8px">
-        ${fo.problems&&fo.problems.length?fo.problems.map((p,pi)=>`<div class="prob-item${p.done?" done":""}"><div class="prob-chk${p.done?" done":""}" onclick="toggleProb(${fi},${pi})"></div><span class="prob-txt">${esc(p.text)}</span><button class="prob-rem" onclick="removeProb(${fi},${pi})">x</button></div>`).join(""):'<div style="padding:10px 12px;font-size:11px;color:var(--stone);font-style:italic">No problems added yet.</div>'}
-      </div>
-      <div style="display:flex;gap:8px"><input id="prob-inp-${fi}" placeholder="Add a problem or thing to fix..." style="flex:1;padding:7px 10px;background:var(--panel);border:1px solid var(--border);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:11px;color:var(--ink);outline:none" onkeydown="if(event.key==='Enter')addProb(${fi})"/><button class="add-btn" style="padding:7px 12px" onclick="addProb(${fi})">+ add</button></div>
+    <div><div class="fo-lbl">problems / things to fix</div>
+      <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:8px">${fo.problems&&fo.problems.length?fo.problems.map((p,pi)=>`<div class="prob-item${p.done?" done":""}"><div class="prob-chk${p.done?" done":""}" onclick="toggleProb(${fi},${pi})"></div><span class="prob-txt">${esc(p.text)}</span><button class="prob-rem" onclick="removeProb(${fi},${pi})">x</button></div>`).join(""):'<div style="padding:10px 12px;font-size:11px;color:var(--stone);font-style:italic">No problems added yet.</div>'}</div>
+      <div style="display:flex;gap:8px"><input id="prob-inp-${fi}" placeholder="Add a problem..." style="flex:1;padding:7px 10px;background:var(--panel);border:1px solid var(--border);border-radius:6px;font-family:'DM Sans',sans-serif;font-size:11px;color:var(--ink);outline:none" onkeydown="if(event.key==='Enter')addProb(${fi})"/><button class="add-btn" style="padding:7px 12px" onclick="addProb(${fi})">+ add</button></div>
     </div>
-    <div><div class="fo-lbl">video link</div>${fo.videoUrl?`<div style="display:flex;align-items:center;gap:8px"><input class="fo-inp" value="${esc(fo.videoUrl)}" oninput="updateFoVideo(${fi},this.value)"/><a href="${esc(fo.videoUrl)}" target="_blank" style="font-size:12px;color:#4a9d6f">open</a></div>`:`<input class="fo-inp" value="" oninput="updateFoVideo(${fi},this.value)" placeholder="Paste video link..."/>`}</div>
+    <div><div class="fo-lbl">video link</div>${fo.videoUrl?`<div style="display:flex;align-items:center;gap:8px"><input class="fo-inp" value="${esc(fo.videoUrl)}" oninput="updateFoVideo(${fi},this.value)"/><a href="${esc(fo.videoUrl)}" target="_blank" style="font-size:12px;color:var(--pink)">open</a></div>`:`<input class="fo-inp" value="" oninput="updateFoVideo(${fi},this.value)" placeholder="Paste video link..."/>`}</div>
     </div></div>`;
   });}
   html+=`<button style="width:100%;padding:9px;background:var(--panel);border:1px solid var(--border);border-radius:8px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;color:var(--ink);cursor:pointer" onclick="addFullout()">+ add fullout</button>`;
   el.innerHTML=html;
 }
 
-// FO ACTIONS
 function toggleDD(fi){const menu=document.getElementById("ded-menu-"+fi),wrap=document.getElementById("dd-wrap-"+fi);if(!menu)return;const open=menu.style.display!=="none";document.querySelectorAll(".ded-menu").forEach(m=>m.style.display="none");activeDedDD=null;if(!open){menu.style.display="block";activeDedDD=wrap;}}
 async function updateFoField(f,v){const s=getFo();if(!s)return;s[f]=v;await foSave(s);}
 async function updateFoVideo(fi,v){const s=getFo();if(!s)return;s.fullouts[fi].videoUrl=v;await foSave(s);}
 async function updateDedDesc(fi,di,v){const s=getFo();if(!s)return;s.fullouts[fi].deductions[di].desc=v;await foSave(s);}
 async function addFullout(){
   const s=getFo();if(!s)return;const t=getTeam(curTeamId);
-  s.fullouts=s.fullouts||[];
-  s.fullouts.push({id:uid(),deductions:[],problems:[],videoUrl:"",stunt1Hits:Object.fromEntries((t.athletes||[]).map(n=>[n,false])),stunt2Hits:Object.fromEntries((t.athletes||[]).map(n=>[n,false])),pyramidHit:false});
-  await foSave(s);renderFoRight();
+  const fo={id:uid(),deductions:[],problems:[],videoUrl:"",pyramidHit:false};
+  (t.stunts||[]).forEach(stunt=>{fo[stunt.id+"Hits"]=Object.fromEntries(stunt.athletes.map(n=>[n,false]));fo[stunt.id+"Absent"]=Object.fromEntries(stunt.athletes.map(n=>[n,false]));});
+  s.fullouts=s.fullouts||[];s.fullouts.push(fo);
+  sd("team","busy","saving");try{await foSave(s);sd("team","ok","saved");renderFoRight();}catch{sd("team","err","failed");}
 }
 async function removeFullout(fi){if(!confirm("Remove?"))return;const s=getFo();if(!s)return;s.fullouts.splice(fi,1);await foSave(s);renderFoRight();}
-async function addDed(fi,label,pts){const s=getFo();if(!s)return;s.fullouts[fi].deductions=s.fullouts[fi].deductions||[];s.fullouts[fi].deductions.push({label,pts,desc:""});document.querySelectorAll(".ded-menu").forEach(m=>m.style.display="none");activeDedDD=null;await foSave(s);renderFoRight();}
-async function removeDed(fi,di){const s=getFo();if(!s)return;s.fullouts[fi].deductions.splice(fi,1);await foSave(s);renderFoRight();}
+async function addDed(fi,label,pts){const s=getFo();if(!s)return;s.fullouts[fi].deductions=s.fullouts[fi].deductions||[];s.fullouts[fi].deductions.push({label,pts,desc:""});document.querySelectorAll(".ded-menu").forEach(m=>m.style.display="none");activeDedDD=null;sd("team","busy","saving");try{await foSave(s);sd("team","ok","saved");renderFoRight();}catch{sd("team","err","failed");}}
+async function removeDed(fi,di){const s=getFo();if(!s)return;s.fullouts[fi].deductions.splice(di,1);await foSave(s);renderFoRight();}
 async function addProb(fi){
   const inp=document.getElementById("prob-inp-"+fi);const txt=inp?inp.value.trim():"";if(!txt)return;
   const s=getFo();if(!s)return;
@@ -710,62 +675,47 @@ async function addProb(fi){
   await clCol(curTeamId).doc(clItem.id).set(clItem);
   s.fullouts[fi].problems=s.fullouts[fi].problems||[];
   s.fullouts[fi].problems.push({id:clItem.id,text:txt,done:false});
-  await foSave(s);renderFoRight();
+  sd("team","busy","saving");try{await foSave(s);sd("team","ok","saved");renderFoRight();}catch{sd("team","err","failed");}
 }
 async function removeProb(fi,pi){const s=getFo();if(!s)return;s.fullouts[fi].problems.splice(pi,1);await foSave(s);renderFoRight();}
 async function toggleProb(fi,pi){
-  const s=getFo();if(!s)return;
-  s.fullouts[fi].problems[pi].done=!s.fullouts[fi].problems[pi].done;
+  const s=getFo();if(!s)return;s.fullouts[fi].problems[pi].done=!s.fullouts[fi].problems[pi].done;
   const cl=(clCache[curTeamId]||[]).find(i=>i.id===s.fullouts[fi].problems[pi].id);
   if(cl){cl.done=s.fullouts[fi].problems[pi].done;await clCol(curTeamId).doc(cl.id).set(cl);}
   await foSave(s);renderFoRight();
 }
-async function toggleStuntHit(fi,field,name){const s=getFo();if(!s)return;s.fullouts[fi][field]=s.fullouts[fi][field]||{};s.fullouts[fi][field][name]=!s.fullouts[fi][field][name];await foSave(s);renderFoRight();}
-async function togglePyramidHit(fi){const s=getFo();if(!s)return;s.fullouts[fi].pyramidHit=!s.fullouts[fi].pyramidHit;await foSave(s);renderFoRight();}
+async function toggleStuntHit(fi,stuntId,name){
+  const s=getFo();if(!s)return;const key=stuntId+"Hits";
+  s.fullouts[fi][key]=s.fullouts[fi][key]||{};s.fullouts[fi][key][name]=!s.fullouts[fi][key][name];
+  sd("team","busy","saving");try{await foSave(s);sd("team","ok","saved");renderFoRight();}catch{sd("team","err","failed");}
+}
+async function toggleStuntAbsent(fi,stuntId,name){
+  const s=getFo();if(!s)return;const key=stuntId+"Absent";const hitKey=stuntId+"Hits";
+  s.fullouts[fi][key]=s.fullouts[fi][key]||{};s.fullouts[fi][key][name]=!s.fullouts[fi][key][name];
+  if(s.fullouts[fi][key][name]&&s.fullouts[fi][hitKey]){s.fullouts[fi][hitKey][name]=false;}
+  sd("team","busy","saving");try{await foSave(s);sd("team","ok","saved");renderFoRight();}catch{sd("team","err","failed");}
+}
+async function togglePyramidHit(fi){const s=getFo();if(!s)return;s.fullouts[fi].pyramidHit=!s.fullouts[fi].pyramidHit;sd("team","busy","saving");try{await foSave(s);sd("team","ok","saved");renderFoRight();}catch{sd("team","err","failed");}}
 async function delFoSession(){if(!confirm("Delete?"))return;await foCol(curTeamId).doc(curFoId).delete();curFoId=null;document.getElementById("fo-right").innerHTML='<div class="no-data" style="padding:40px 0;text-align:center">Session deleted.</div>';}
 
 // ── CLASS PLANS ──
 function renderPlansView(container){
-  const plans=plansCache[curTeamId]||[];
-  const team=getTeam(curTeamId);
-  const tplKeys=Object.keys(team.templates);
+  const plans=plansCache[curTeamId]||[];const team=getTeam(curTeamId);const tplKeys=Object.keys(team.templates);
   let html=`<div style="flex:1;overflow-y:auto;padding:20px 24px 60px">
     <div style="font-size:9px;font-weight:600;letter-spacing:2.5px;text-transform:uppercase;color:var(--stone);margin-bottom:12px">new plan</div>
     <div style="display:grid;grid-template-columns:repeat(${Math.min(tplKeys.length,3)},1fr);gap:10px;margin-bottom:24px">`;
-  tplKeys.forEach(key=>{
-    const t=team.templates[key];
-    html+=`<div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px;cursor:pointer;transition:all .15s" onclick="startBuilder('${key}')" onmouseover="this.style.background='var(--panel)'" onmouseout="this.style.background='var(--white)')">
-      <div style="font-family:'DM Serif Display',serif;font-size:20px;font-style:italic">${esc(t.display)}</div>
-      <div style="font-size:10px;color:var(--stone);margin-top:2px">${esc(t.time)}</div>
-      <div style="margin-top:4px;font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--putty)">${t.duration} min</div>
-    </div>`;
-  });
+  tplKeys.forEach(key=>{const t=team.templates[key];html+=`<div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:14px;cursor:pointer" onclick="startBuilder('${key}')"><div style="font-family:'DM Serif Display',serif;font-size:20px;font-style:italic">${esc(t.display)}</div><div style="font-size:10px;color:var(--stone);margin-top:2px">${esc(t.time)}</div><div style="margin-top:4px;font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--putty)">${t.duration} min</div></div>`;});
   html+=`</div><div style="font-size:9px;font-weight:600;letter-spacing:2.5px;text-transform:uppercase;color:var(--stone);margin-bottom:10px">saved plans</div>`;
-  if(!plans.length) html+='<div class="no-data">No plans yet.</div>';
-  else{
-    const sorted=[...plans].filter(p=>p.date).sort((a,b)=>b.date.localeCompare(a.date));
-    const undated=plans.filter(p=>!p.date);
-    html+=[...sorted,...undated].map(p=>{
-      const t=team.templates[p.templateId]||{display:p.templateId};
-      return`<div style="display:flex;justify-content:space-between;align-items:center;background:var(--white);border:1px solid var(--border);border-radius:10px;padding:10px 13px;cursor:pointer;margin-bottom:8px" onclick="openPlan('${p.id}')">
-        <div><div style="font-family:'DM Serif Display',serif;font-size:14px;font-style:italic">${esc(t.display)}</div><div style="font-size:10px;color:var(--stone);margin-top:2px">${p.date?fmtDate(p.date):"no date set"}</div></div>
-        <button class="del-btn" onclick="delPlan(event,'${p.id}')">x</button>
-      </div>`;
-    }).join("");
-  }
-  html+="</div>";
-  container.innerHTML=html;
+  if(!plans.length)html+='<div class="no-data">No plans yet.</div>';
+  else{const sorted=[...plans].filter(p=>p.date).sort((a,b)=>b.date.localeCompare(a.date));const undated=plans.filter(p=>!p.date);html+=[...sorted,...undated].map(p=>{const t=team.templates[p.templateId]||{display:p.templateId};return`<div style="display:flex;justify-content:space-between;align-items:center;background:var(--white);border:1px solid var(--border);border-radius:10px;padding:10px 13px;cursor:pointer;margin-bottom:8px" onclick="openPlan('${p.id}')"><div><div style="font-family:'DM Serif Display',serif;font-size:14px;font-style:italic">${esc(t.display)}</div><div style="font-size:10px;color:var(--stone);margin-top:2px">${p.date?fmtDate(p.date):"no date set"}</div></div><button class="del-btn" onclick="delPlan(event,'${p.id}')">x</button></div>`;}).join("");}
+  html+="</div>";container.innerHTML=html;
 }
-
 async function delPlan(e,id){e.stopPropagation();if(!confirm("Delete?"))return;await planDel(id);}
 
 function startBuilder(tplId,existing){
   curTplId=tplId;const team=getTeam(curTeamId);const t=team.templates[tplId];
   if(existing){curPlanId=existing.id;sections=JSON.parse(JSON.stringify(existing.sections||[]));document.getElementById("b-date").value=existing.date||"";}
-  else{curPlanId=uid();sections=[];
-    const dayMap={monday:1,tuesday:2,wednesday:3,thursday:4,friday:5,saturday:6,sunday:0};
-    document.getElementById("b-date").value=nwd(dayMap[tplId]??1);
-  }
+  else{curPlanId=uid();sections=[];const dayMap={monday:1,tuesday:2,wednesday:3,thursday:4,friday:5,saturday:6,sunday:0};document.getElementById("b-date").value=nwd(dayMap[tplId]??1);}
   pickedCat=null;
   document.getElementById("b-hd-title").textContent=t.display+" class plan";
   document.getElementById("b-total").textContent=t.duration+" min total";
@@ -773,15 +723,13 @@ function startBuilder(tplId,existing){
   renderCatGrid();renderBuilderSecs();updateTimebar();
   showScreen("builder");
 }
-
 function onDateChange(){const v=document.getElementById("b-date").value;document.getElementById("b-date-prev").textContent=v?fmtDate(v):"";updateTimebar();if(v)autoSave();}
 function updateTimebar(){
   const team=getTeam(curTeamId);const t=team.templates[curTplId];const total=sections.reduce((s,x)=>s+(parseInt(x.duration)||0),0);
   const pct=Math.min((total/t.duration)*100,100),over=total>t.duration;
   const fill=document.getElementById("b-prog");fill.style.width=pct+"%";fill.style.background=over?"#b33a2d":"#9a9a98";
-  const used=document.getElementById("b-used");used.textContent=total+" min";used.className=over?"over":"";
+  const used=document.getElementById("b-used");used.textContent=total+" min";
 }
-
 function renderCatGrid(){
   const team=getTeam(curTeamId);const cats=getCategories(team);
   document.getElementById("cat-grid").innerHTML=cats.map(c=>`<div class="cat-chip${pickedCat===c.id?" sel":""}" onclick="pickCat('${c.id}')"><span class="cat-ic">${c.icon}</span><span>${c.label}</span></div>`).join("");
@@ -791,14 +739,13 @@ function pickCat(id){pickedCat=(pickedCat===id)?null:id;renderCatGrid();}
 function addSection(){
   if(!pickedCat)return;const team=getTeam(curTeamId);const cats=getCategories(team);const cat=cats.find(c=>c.id===pickedCat);
   const sec={id:uid(),categoryId:pickedCat,duration:10,details:"",comments:""};
-  if(cat&&cat.stunt)sec.stuntData=Object.fromEntries((team.athletes||[]).map(n=>[n,{attempts:"",hits:""}]));
+  if(cat&&cat.stunt){const stunt=(team.stunts||[]).find(s=>s.id===cat.stuntKey);if(stunt)sec.stuntData=Object.fromEntries(stunt.athletes.map(n=>[n,{attempts:"",hits:""}]));}
   sections.push(sec);pickedCat=null;renderCatGrid();renderBuilderSecs();updateTimebar();
 }
 function removeSection(id){sections=sections.filter(s=>s.id!==id);renderBuilderSecs();updateTimebar();}
 function moveSection(i,d){const n=[...sections];[n[i],n[i+d]]=[n[i+d],n[i]];sections=n;renderBuilderSecs();}
 function setSecDur(id,val){const s=sections.find(s=>s.id===id);if(s)s.duration=val;renderBuilderSecs();updateTimebar();}
 function setSecDetails(id,val){const s=sections.find(s=>s.id===id);if(s)s.details=val;}
-
 function renderBuilderSecs(){
   const wrap=document.getElementById("sections-wrap"),list=document.getElementById("sections-list");
   if(!sections.length){wrap.style.display="none";return;}wrap.style.display="flex";
@@ -807,11 +754,11 @@ function renderBuilderSecs(){
     return`<div class="bsec"><div class="bsec-top"><div class="bsec-lft"><span class="bsec-num">${String(i+1).padStart(2,"0")}</span><span class="cat-ic">${cat.icon||""}</span><span class="bsec-lbl">${cat.label||""}</span></div><div class="bsec-acts"><button class="ic-btn" onclick="moveSection(${i},-1)"${i===0?" disabled":""}>&#9650;</button><button class="ic-btn" onclick="moveSection(${i},1)"${i===sections.length-1?" disabled":""}>&#9660;</button><button class="ic-btn danger" onclick="removeSection('${s.id}')">x</button></div></div><div class="field-block"><span class="lbl-xs">duration</span><div class="tchips">${TIMES.map(t=>`<button class="tchip${s.duration===t?" sel":""}" onclick="setSecDur('${s.id}',${t})">${t}m</button>`).join("")}</div></div><div class="field-block"><span class="lbl-xs">breakdown / details</span><textarea class="ta" rows="2" placeholder="focus points..." oninput="setSecDetails('${s.id}',this.value)">${esc(s.details||"")}</textarea></div></div>`;
   }).join("");
 }
-
 function buildPlanObj(){return{id:curPlanId,templateId:curTplId,date:document.getElementById("b-date").value,sections:JSON.parse(JSON.stringify(sections)),attendance:getPlan(curPlanId)?.attendance||{}};}
 async function autoSave(){const p=buildPlanObj();sd("builder","busy","saving");try{await planSave(p);sd("builder","ok","saved");}catch{sd("builder","err","failed");}}
 async function savePlan(){const p=buildPlanObj();sd("builder","busy","saving");try{await planSave(p);sd("builder","ok","saved");openPlan(p.id);}catch{sd("builder","err","failed");}}
 
+// ── PLAN VIEW ──
 function openPlan(id){
   const plan=getPlan(id)||(plansCache[curTeamId]||[]).find(p=>p.id===id);if(!plan)return;
   curPlanId=id;const team=getTeam(curTeamId);const t=team.templates[plan.templateId]||{};
@@ -821,33 +768,62 @@ function openPlan(id){
   const total=plan.sections.reduce((s,x)=>s+(parseInt(x.duration)||0),0);
   document.getElementById("p-dur").textContent=total+" min — "+t.duration+" min total";
   sd("plan","ok","");
-  renderAttendance(plan,team);renderPlanSections(plan,team);
+  renderAttendance(plan,team);
+  renderLastSessionNotes(plan,team);
+  renderPlanSections(plan,team);
+  stopSectionTimer();
   showScreen("plan-view");
 }
 
-function renderAttendance(plan,team){
-  document.getElementById("attend-list").innerHTML=(team.athletes||[]).map(name=>{const on=!!(plan.attendance&&plan.attendance[name]);return`<div class="attend-item${on?" on":""}" onclick="toggleAttend('${name}')"><span class="tick">${on?"v":""}</span><span class="aname">${esc(name)}'s group</span></div>`;}).join("");
+function renderLastSessionNotes(currentPlan,team){
+  const wrap=document.getElementById("last-session-wrap");const content=document.getElementById("last-session-content");
+  const plans=(plansCache[curTeamId]||[]).filter(p=>p.templateId===currentPlan.templateId&&p.id!==currentPlan.id&&p.date&&p.date<(currentPlan.date||"9999")).sort((a,b)=>b.date.localeCompare(a.date));
+  if(!plans.length){wrap.style.display="none";return;}
+  const last=plans[0];
+  const notes=last.sections.map(s=>s.comments).filter(Boolean);
+  if(!notes.length){wrap.style.display="none";return;}
+  wrap.style.display="block";
+  content.innerHTML=`<div class="last-session-box"><div class="last-session-lbl">last ${esc(team.templates[last.templateId]?.display||"")} — ${fmtDate(last.date)}</div>${notes.map(n=>`<div class="last-session-text">${esc(n)}</div>`).join("")}</div>`;
 }
 
+function renderAttendance(plan,team){
+  const allAthletes=[...new Set((team.stunts||[]).flatMap(s=>s.athletes))];
+  document.getElementById("attend-list").innerHTML=allAthletes.map(name=>{const on=!!(plan.attendance&&plan.attendance[name]);return`<div class="attend-item${on?" on":""}" onclick="toggleAttend('${name}')"><span class="tick">${on?"&#10003;":""}</span><span class="aname">${esc(name)}'s group</span></div>`;}).join("");
+}
 async function toggleAttend(name){
-  const plan=getPlan();if(!plan)return;
-  plan.attendance=plan.attendance||{};plan.attendance[name]=!plan.attendance[name];
+  const plan=getPlan();if(!plan)return;plan.attendance=plan.attendance||{};plan.attendance[name]=!plan.attendance[name];
   sd("plan","busy","saving");try{await planSave(plan);sd("plan","ok","saved");}catch{sd("plan","err","failed");}
   renderAttendance(plan,getTeam(curTeamId));
+}
+
+function calcStartTime(plan,secIndex){
+  const team=getTeam(curTeamId);const t=team.templates[plan.templateId];
+  if(!t||!t.time)return null;
+  const match=t.time.match(/(\d+):(\d+)\s*(am|pm)/i);if(!match)return null;
+  let h=parseInt(match[1]),m=parseInt(match[2]);const ampm=match[3].toLowerCase();
+  if(ampm==="pm"&&h!==12)h+=12;if(ampm==="am"&&h===12)h=0;
+  let totalMins=h*60+m;
+  for(let i=0;i<secIndex;i++){totalMins+=parseInt(plan.sections[i]?.duration)||0;}
+  const endMins=totalMins+(parseInt(plan.sections[secIndex]?.duration)||0);
+  function fmt(mins){const hh=Math.floor(mins/60)%24;const mm=mins%60;const ap=hh>=12?"pm":"am";const h12=hh%12||12;return h12+":"+(mm<10?"0":"")+mm+" "+ap;}
+  return fmt(totalMins)+" — "+fmt(endMins);
 }
 
 function renderPlanSections(plan,team){
   const cats=getCategories(team);
   document.getElementById("plan-sections").innerHTML=plan.sections.map((sec,i)=>{
     const cat=cats.find(c=>c.id===sec.categoryId)||{};
-    let html=`<div class="plan-block"><div class="plan-block-hd"><div class="blk-lft"><span class="blk-num">${String(i+1).padStart(2,"0")}</span><span class="cat-ic" style="font-size:10px;color:var(--putty)">${cat.icon||""}</span><span class="blk-title">${cat.label||""}</span></div><span class="dur-tag">${sec.duration} min</span></div><div class="plan-block-body">`;
+    const timeStr=calcStartTime(plan,i);
+    const durSecs=parseInt(sec.duration)*60;
+    let html=`<div class="plan-block" id="sec-block-${sec.id}"><div class="plan-block-hd"><div class="blk-lft"><span class="blk-num">${String(i+1).padStart(2,"0")}</span><span class="cat-ic" style="font-size:10px;color:var(--putty)">${cat.icon||""}</span><span class="blk-title">${cat.label||""}</span></div><div style="display:flex;align-items:center;gap:8px">`;
+    if(timeStr)html+=`<span style="font-size:10px;color:var(--stone)">${esc(timeStr)}</span>`;
+    html+=`<span class="dur-tag">${sec.duration} min</span><button class="section-timer-btn" id="sec-btn-${sec.id}" onclick="toggleSectionTimer(${durSecs},'${esc(cat.label||"")} (${sec.duration}min)','${sec.id}')">start</button><span class="section-timer-countdown" id="sec-cd-${sec.id}"></span></div></div><div class="plan-block-body">`;
     if(sec.details)html+=`<div class="plan-field"><div class="plan-field-lbl">breakdown</div><div class="detail-text">${esc(sec.details)}</div></div>`;
-    if(cat.stunt)html+=`<div class="plan-field"><div class="plan-field-lbl">stunt tracking</div><div class="stunt-tbl"><div class="stunt-tbl-hd"><span>group</span><span>attempts</span><span>hits</span></div>${(team.athletes||[]).map(name=>`<div class="stunt-tbl-row"><span style="font-size:11px">${esc(name)}'s group</span><input type="number" min="0" class="stunt-inp" placeholder="--" value="${esc(String(sec.stuntData&&sec.stuntData[name]?sec.stuntData[name].attempts||"":""))}" oninput="updateStunt('${sec.id}','${name}','attempts',this.value)"/><input type="number" min="0" class="stunt-inp" placeholder="--" value="${esc(String(sec.stuntData&&sec.stuntData[name]?sec.stuntData[name].hits||"":""))}" oninput="updateStunt('${sec.id}','${name}','hits',this.value)"/></div>`).join("")}</div></div>`;
+    if(cat.stunt){const stunt=(team.stunts||[]).find(s=>s.id===cat.stuntKey);const athletes=stunt?stunt.athletes:[];html+=`<div class="plan-field"><div class="plan-field-lbl">stunt tracking</div><div class="stunt-tbl"><div class="stunt-tbl-hd"><span>group</span><span>attempts</span><span>hits</span></div>${athletes.map(name=>`<div class="stunt-tbl-row"><span style="font-size:11px">${esc(name)}'s group</span><input type="number" min="0" class="stunt-inp" placeholder="--" value="${esc(String(sec.stuntData&&sec.stuntData[name]?sec.stuntData[name].attempts||"":""))}" oninput="updateStunt('${sec.id}','${name}','attempts',this.value)"/><input type="number" min="0" class="stunt-inp" placeholder="--" value="${esc(String(sec.stuntData&&sec.stuntData[name]?sec.stuntData[name].hits||"":""))}" oninput="updateStunt('${sec.id}','${name}','hits',this.value)"/></div>`).join("")}</div></div>`;}
     html+=`<div class="plan-field"><div class="plan-field-lbl">comments</div><textarea class="plan-ta" rows="2" placeholder="notes from practice..." oninput="updateComment('${sec.id}',this.value)">${esc(sec.comments||"")}</textarea></div></div></div>`;
     return html;
   }).join("")+`<div class="end-mark">-- end of plan --</div>`;
 }
-
 function schedPlanSave(){clearTimeout(saveTimer);saveTimer=setTimeout(async()=>{const plan=getPlan();if(!plan)return;sd("plan","busy","saving");try{await planSave(plan);sd("plan","ok","saved");}catch{sd("plan","err","failed");}},1200);}
 function updateComment(secId,val){const plan=getPlan();if(!plan)return;const s=plan.sections.find(s=>s.id===secId);if(s)s.comments=val;schedPlanSave();}
 function updateStunt(secId,name,field,val){const plan=getPlan();if(!plan)return;const s=plan.sections.find(s=>s.id===secId);if(!s)return;s.stuntData=s.stuntData||{};s.stuntData[name]=s.stuntData[name]||{attempts:"",hits:""};s.stuntData[name][field]=val;schedPlanSave();}
@@ -855,19 +831,10 @@ function editPlan(){const plan=getPlan();if(!plan)return;startBuilder(plan.templ
 
 // ── CHECKLIST ──
 function renderChecklistView(container){
-  container.innerHTML=`<div style="flex:1;overflow-y:auto;padding:20px 24px 60px">
-    <div style="font-size:9px;font-weight:600;letter-spacing:2.5px;text-transform:uppercase;color:var(--stone);margin-bottom:12px">problems / things to fix</div>
-    <div class="add-row"><input class="add-inp" id="cl-inp" placeholder="Add a problem..." onkeydown="if(event.key==='Enter')addCLItem()"/><button class="add-btn" onclick="addCLItem()">+ add</button></div>
-    <div id="cl-list"></div>
-  </div>`;
+  container.innerHTML=`<div style="flex:1;overflow-y:auto;padding:20px 24px 60px"><div style="font-size:9px;font-weight:600;letter-spacing:2.5px;text-transform:uppercase;color:var(--stone);margin-bottom:12px">problems / things to fix</div><div class="add-row"><input class="add-inp" id="cl-inp" placeholder="Add a problem..." onkeydown="if(event.key==='Enter')addCLItem()"/><button class="add-btn" onclick="addCLItem()">+ add</button></div><div id="cl-list"></div></div>`;
   renderCLList();
 }
-function renderCLList(){
-  const list=document.getElementById("cl-list");if(!list)return;
-  const items=clCache[curTeamId]||[];
-  if(!items.length){list.innerHTML='<div class="no-data">No items yet.</div>';return;}
-  list.innerHTML=items.map(item=>`<div class="cl-item${item.done?" done":""}"><div class="chk-box${item.done?" ticked":""}" onclick="toggleCL('${item.id}')"></div><span class="cl-text">${esc(item.text)}</span><button class="cl-rem" onclick="removeCL('${item.id}')">x</button></div>`).join("");
-}
+function renderCLList(){const list=document.getElementById("cl-list");if(!list)return;const items=clCache[curTeamId]||[];if(!items.length){list.innerHTML='<div class="no-data">No items yet.</div>';return;}list.innerHTML=items.map(item=>`<div class="cl-item${item.done?" done":""}"><div class="chk-box${item.done?" ticked":""}" onclick="toggleCL('${item.id}')"></div><span class="cl-text">${esc(item.text)}</span><button class="cl-rem" onclick="removeCL('${item.id}')">x</button></div>`).join("");}
 async function addCLItem(){const inp=document.getElementById("cl-inp");const txt=inp.value.trim();if(!txt)return;inp.value="";const id=uid();await clCol(curTeamId).doc(id).set({id,text:txt,done:false,created_at:new Date().toISOString()});}
 async function toggleCL(id){const i=(clCache[curTeamId]||[]).find(x=>x.id===id);if(!i)return;i.done=!i.done;await clCol(curTeamId).doc(id).set(i);}
 async function removeCL(id){if(!confirm("Remove?"))return;await clCol(curTeamId).doc(id).delete();}
@@ -877,66 +844,88 @@ function renderTeamAnalytics(container){
   const sessions=foCache[curTeamId]||[];const team=getTeam(curTeamId);
   let totalFo=0;sessions.forEach(s=>{if(s.fullouts)totalFo+=s.fullouts.length;});
   let html=`<div style="flex:1;overflow-y:auto;padding:20px 24px 60px">`;
-  html+=`<div class="analytics-title">stunt group hit rates</div><div class="analytics-sub">across ${totalFo} fullouts</div>`;
-  if(totalFo&&team.athletes){
-    html+=`<table style="width:100%;border:1px solid var(--border);border-radius:10px;border-collapse:collapse;overflow:hidden;margin-bottom:18px">
-      <thead><tr style="background:var(--ink)"><th style="padding:6px 10px;font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:white;text-align:left">group</th><th colspan="2" style="padding:6px 8px;font-size:9px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:white;background:#2a2a2a">1st stunt</th>${team.stunts>=2?`<th colspan="2" style="padding:6px 8px;font-size:9px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:white;background:#1a1a1a">2nd stunt</th><th colspan="2" style="padding:6px 8px;font-size:9px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:white;background:#111">combined</th>`:""}</tr></thead>
-      <tbody>${team.athletes.map(name=>{
-        let s1h=0,s2h=0;
-        sessions.forEach(s=>{if(s.fullouts)s.fullouts.forEach(fo=>{if(fo.stunt1Hits&&fo.stunt1Hits[name])s1h++;if(fo.stunt2Hits&&fo.stunt2Hits[name])s2h++;});});
-        const p1=Math.round((s1h/totalFo)*100);
-        function bc(h,t,p){return`<td style="padding:6px 8px;text-align:center;font-size:11px">${h}/${t}</td><td style="padding:6px 8px;min-width:80px"><div style="display:flex;align-items:center;gap:4px"><div class="pct-bar-wrap"><div class="pct-bar" style="width:${p}%;background:${pctCol(p)}"></div></div><span style="font-size:10px;font-weight:700;color:${pctCol(p)}">${p}%</span></div></td>`;}
-        if(team.stunts>=2){const p2=Math.round((s2h/totalFo)*100);const cH=s1h+s2h,cT=totalFo*2,pC=Math.round((cH/cT)*100);return`<tr style="border-top:1px solid var(--border)"><td style="padding:6px 10px;font-size:11px;font-weight:500">${esc(name)}'s group</td>${bc(s1h,totalFo,p1)}${bc(s2h,totalFo,p2)}${bc(cH,cT,pC)}</tr>`;}
-        return`<tr style="border-top:1px solid var(--border)"><td style="padding:6px 10px;font-size:11px;font-weight:500">${esc(name)}'s group</td>${bc(s1h,totalFo,p1)}</tr>`;
-      }).join("")}</tbody></table>`;
+  html+=`<div class="analytics-title">stunt group hit rates</div><div class="analytics-sub">across ${totalFo} fullouts — absent groups excluded</div>`;
+  if(totalFo&&team.stunts){
+    const allAthletes=[...new Set((team.stunts||[]).flatMap(s=>s.athletes))];
+    html+=`<table style="width:100%;border:1px solid var(--border);border-radius:10px;border-collapse:collapse;overflow:hidden;margin-bottom:18px"><thead><tr style="background:var(--ink)"><th style="padding:6px 10px;font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:white;text-align:left">group</th>${(team.stunts||[]).map(s=>`<th colspan="2" style="padding:6px 8px;font-size:9px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:white">${esc(s.label)}</th>`).join("")}${team.stunts.length>1?`<th colspan="2" style="padding:6px 8px;font-size:9px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;color:white;background:#111">combined</th>`:""}</tr></thead><tbody>${allAthletes.map(name=>{
+      let cells="";let totalH=0,totalT=0;
+      (team.stunts||[]).forEach(stunt=>{
+        if(!stunt.athletes.includes(name)){cells+=`<td colspan="2" style="padding:6px 8px;text-align:center;font-size:10px;color:var(--stone)">n/a</td>`;return;}
+        let h=0,t=0;
+        sessions.forEach(s=>{if(s.fullouts)s.fullouts.forEach(fo=>{const abs=fo[stunt.id+"Absent"]&&fo[stunt.id+"Absent"][name];if(!abs){t++;if(fo[stunt.id+"Hits"]&&fo[stunt.id+"Hits"][name])h++;}});});
+        const p=t>0?Math.round((h/t)*100):null;totalH+=h;totalT+=t;
+        cells+=`<td style="padding:6px 8px;text-align:center;font-size:11px">${h}/${t}</td><td style="padding:6px 8px;min-width:80px"><div style="display:flex;align-items:center;gap:4px"><div class="pct-bar-wrap"><div class="pct-bar" style="width:${p||0}%;background:${p!==null?pctCol(p):"var(--border)"}"></div></div><span style="font-size:10px;font-weight:700;color:${p!==null?pctCol(p):"var(--stone)"}">${p!==null?p+"%":"--"}</span></div></td>`;
+      });
+      if(team.stunts.length>1){const pC=totalT>0?Math.round((totalH/totalT)*100):null;cells+=`<td style="padding:6px 8px;text-align:center;font-size:11px">${totalH}/${totalT}</td><td style="padding:6px 8px;min-width:80px"><div style="display:flex;align-items:center;gap:4px"><div class="pct-bar-wrap"><div class="pct-bar" style="width:${pC||0}%;background:${pC!==null?pctCol(pC):"var(--border)"}"></div></div><span style="font-size:10px;font-weight:700;color:${pC!==null?pctCol(pC):"var(--stone)"}">${pC!==null?pC+"%":"--"}</span></div></td>`;}
+      return`<tr style="border-top:1px solid var(--border)"><td style="padding:6px 10px;font-size:11px;font-weight:500">${esc(name)}'s group</td>${cells}</tr>`;
+    }).join("")}</tbody></table>`;
   } else html+='<div class="no-data">No fullout data yet.</div>';
-
   let pyH=0,pyT=0;sessions.forEach(s=>{if(s.fullouts)s.fullouts.forEach(fo=>{pyT++;if(fo.pyramidHit)pyH++;});});
   if(pyT>0){const pyP=Math.round((pyH/pyT)*100);html+=`<div class="analytics-title" style="margin-top:16px">pyramid hit rate</div><div class="analytics-sub">${pyH}/${pyT} fullouts</div><div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 16px;display:flex;align-items:center;gap:16px;margin-bottom:18px"><div class="pct-bar-wrap" style="flex:1;height:8px"><div class="pct-bar" style="width:${pyP}%;background:${pctCol(pyP)}"></div></div><span style="font-size:22px;font-weight:700;color:${pctCol(pyP)}">${pyP}%</span></div>`;}
-
   html+=`<div class="analytics-title">deductions over time</div><div class="analytics-sub">per session, broken down by fullout</div>`;
   const sorted=[...sessions].filter(s=>s.date).sort((a,b)=>a.date.localeCompare(b.date));
-  html+=sorted.map(s=>{
-    const tot=s.fullouts?s.fullouts.reduce((sum,fo)=>sum+(fo.deductions?fo.deductions.reduce((a,d)=>a+(parseFloat(d.pts||d.points)||0),0):0),0):0;
-    return`<div class="fo-session-card"><div class="fo-session-card-hd"><span style="font-family:'DM Serif Display',serif;font-size:15px;font-style:italic">${fmtShort(s.date)}</span><span style="font-size:13px;font-weight:700;color:${tot>0?"var(--red)":"#4a9d6f"}">${tot>0?"-"+tot.toFixed(2):"clean"}</span></div>${s.fullouts&&s.fullouts.length?s.fullouts.map((fo,fi)=>{const foDed=fo.deductions?fo.deductions.reduce((a,d)=>a+(parseFloat(d.pts||d.points)||0),0):0;return`<div class="fo-fo-hd">fullout ${String(fi+1).padStart(2,"00")} — ${foDed>0?"-"+foDed.toFixed(2):"no deductions"}</div>${fo.deductions&&fo.deductions.length?fo.deductions.map(d=>`<div class="fo-ded-line"><span style="color:var(--red);font-weight:600">-${parseFloat(d.pts||d.points).toFixed(2)}</span> ${esc(d.label)}${d.desc?` <span style="color:var(--stone)">&#8212; ${esc(d.desc)}</span>`:""}</div>`).join(""):'<div class="fo-ded-line" style="color:var(--stone)">No deductions</div>'}`; }).join(""):""}`;
-  }).join("")+"</div>";
-  html+="</div>";
-  container.innerHTML=html;
+  html+=sorted.map(s=>{const tot=s.fullouts?s.fullouts.reduce((sum,fo)=>sum+(fo.deductions?fo.deductions.reduce((a,d)=>a+(parseFloat(d.pts||d.points)||0),0):0),0):0;return`<div class="fo-session-card"><div class="fo-session-card-hd"><span style="font-family:'DM Serif Display',serif;font-size:15px;font-style:italic">${fmtShort(s.date)}</span><span style="font-size:13px;font-weight:700;color:${tot>0?"var(--red)":"#4a9d6f"}">${tot>0?"-"+tot.toFixed(2):"clean"}</span></div>${s.fullouts&&s.fullouts.length?s.fullouts.map((fo,fi)=>{const foDed=fo.deductions?fo.deductions.reduce((a,d)=>a+(parseFloat(d.pts||d.points)||0),0):0;return`<div class="fo-fo-hd">fullout ${String(fi+1).padStart(2,"00")} — ${foDed>0?"-"+foDed.toFixed(2):"no deductions"}</div>${fo.deductions&&fo.deductions.length?fo.deductions.map(d=>`<div class="fo-ded-line"><span style="color:var(--red);font-weight:600">-${parseFloat(d.pts||d.points).toFixed(2)}</span> ${esc(d.label)}${d.desc?` <span style="color:var(--stone)">&#8212; ${esc(d.desc)}</span>`:""}</div>`).join(""):'<div class="fo-ded-line" style="color:var(--stone)">No deductions</div>'}`; }).join(""):""}`;}).join("")+"</div>";
+  html+="</div>";container.innerHTML=html;
 }
 
-// ── ALL TEAMS ANALYTICS ──
+// ── ALL TEAMS ANALYTICS (TERM CALENDAR) ──
 function openAllAnalytics(){showScreen("all-analytics");renderAllAnalytics();}
+function getSessionDot(sessions,weekStart,weekEnd,dayIndex){
+  // dayIndex 0=first training day, 1=second
+  const weekSessions=sessions.filter(s=>{if(!s.date)return false;const d=new Date(s.date+"T12:00:00");return d>=weekStart&&d<=weekEnd;}).sort((a,b)=>a.date.localeCompare(b.date));
+  const s=weekSessions[dayIndex];if(!s)return"empty";
+  const totalDed=s.fullouts?s.fullouts.reduce((sum,fo)=>sum+(fo.deductions?fo.deductions.reduce((a,d)=>a+(parseFloat(d.pts||d.points)||0),0):0),0):0;
+  if(totalDed===0)return"green";
+  if(totalDed<=1)return"orange";
+  return"red";
+}
+
 function renderAllAnalytics(){
   const el=document.getElementById("all-analytics-content");
-  let html=`<div class="analytics-title">all teams overview</div><div class="analytics-sub">compare fullout performance across the program</div>`;
-  html+=`<div style="width:100%;border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:18px">
-    <div style="display:grid;grid-template-columns:160px 80px 80px 1fr 80px;background:var(--panel);padding:7px 14px;border-bottom:1px solid var(--border)">
-      <span style="font-size:8px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--stone)">team</span>
-      <span style="font-size:8px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--stone);text-align:center">sessions</span>
-      <span style="font-size:8px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--stone);text-align:center">fullouts</span>
-      <span style="font-size:8px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--stone)">avg deductions</span>
-      <span style="font-size:8px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--stone);text-align:right">pyramid%</span>
-    </div>
-    ${TEAMS.map((team,i)=>{
+  // Group weeks by term
+  const terms={};
+  TERM_WEEKS.forEach(w=>{if(!terms[w.term])terms[w.term]=[];terms[w.term].push(w);});
+
+  let html=`<div class="analytics-title">all teams — term calendar</div><div class="analytics-sub">green = clean · orange = ≤1pt deductions · red = >1pt deductions</div>`;
+
+  Object.entries(terms).forEach(([termName,weeks])=>{
+    html+=`<div style="margin-bottom:24px"><div style="font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--stone);margin-bottom:8px">${esc(termName)}</div>`;
+    html+=`<div style="border:1px solid var(--border);border-radius:10px;overflow:hidden">`;
+    // Header row
+    html+=`<div style="display:grid;grid-template-columns:140px ${weeks.map(()=>"1fr").join(" ")};background:var(--panel);border-bottom:1px solid var(--border)">`;
+    html+=`<div style="padding:6px 10px;font-size:8px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--stone)">team</div>`;
+    weeks.forEach(w=>{html+=`<div class="cal-week-col">W${w.week}</div>`;});
+    html+=`</div>`;
+    // Team rows
+    TEAMS.forEach((team,ti)=>{
       const sessions=foCache[team.id]||[];
-      const totalFo=sessions.reduce((s,x)=>s+(x.fullouts?x.fullouts.length:0),0);
-      const totalDed=sessions.reduce((sum,s)=>sum+(s.fullouts?s.fullouts.reduce((a,fo)=>a+(fo.deductions?fo.deductions.reduce((x,d)=>x+(parseFloat(d.pts||d.points)||0),0):0),0):0),0);
-      const avgDed=sessions.length>0?(totalDed/sessions.length):0;
-      let pyH=0,pyT=0;sessions.forEach(s=>{if(s.fullouts)s.fullouts.forEach(fo=>{pyT++;if(fo.pyramidHit)pyH++;});});
-      const pyP=pyT>0?Math.round((pyH/pyT)*100):null;
-      const bg=i%2===0?"var(--surface)":"transparent";
-      return`<div style="display:grid;grid-template-columns:160px 80px 80px 1fr 80px;padding:8px 14px;border-top:1px solid var(--border);align-items:center;background:${bg}">
-        <span style="font-size:12px;font-weight:500;cursor:pointer;color:var(--ink)" onclick="openTeam('${team.id}')">${esc(team.name)}</span>
-        <span style="font-size:12px;color:var(--stone);text-align:center">${sessions.length}</span>
-        <span style="font-size:12px;color:var(--stone);text-align:center">${totalFo}</span>
-        <div style="display:flex;align-items:center;gap:8px">
-          <div class="pct-bar-wrap" style="max-width:120px"><div class="pct-bar" style="width:${Math.min((avgDed/5)*100,100)}%;background:${avgDed>2?"var(--red)":avgDed>1?"var(--orange)":"var(--green)"}"></div></div>
-          <span style="font-size:12px;font-weight:600;color:${avgDed>0?"var(--red)":"#4a9d6f"}">${avgDed>0?"-"+avgDed.toFixed(2):"clean"}</span>
-        </div>
-        <span style="font-size:12px;font-weight:700;text-align:right;color:${pyP!==null?pctCol(pyP):"var(--stone)"}">${pyP!==null?pyP+"%":"--"}</span>
-      </div>`;
-    }).join("")}
-  </div>`;
+      const bg=ti%2===0?"var(--surface)":"transparent";
+      html+=`<div style="display:grid;grid-template-columns:140px ${weeks.map(()=>"1fr").join(" ")};align-items:center;border-top:1px solid var(--border);background:${bg}">`;
+      html+=`<div style="padding:6px 10px;font-size:11px;font-weight:500;cursor:pointer;color:var(--ink)" onclick="openTeam('${team.id}')">${esc(team.name)}</div>`;
+      weeks.forEach(w=>{
+        const weekEnd=new Date(w.startDate);weekEnd.setDate(weekEnd.getDate()+6);
+        const d1=getSessionDot(sessions,w.startDate,weekEnd,0);
+        const d2=getSessionDot(sessions,w.startDate,weekEnd,1);
+        html+=`<div style="display:flex;justify-content:center;gap:4px;padding:6px 4px;border-right:1px solid var(--border)"><div class="cal-dot ${d1}"></div><div class="cal-dot ${d2}"></div></div>`;
+      });
+      html+=`</div>`;
+    });
+    html+=`</div></div>`;
+  });
+
+  // Summary table
+  html+=`<div class="analytics-title" style="margin-top:20px">program overview</div><div class="analytics-sub">season summary per team</div>`;
+  html+=`<div style="border:1px solid var(--border);border-radius:10px;overflow:hidden"><div style="display:grid;grid-template-columns:160px 80px 80px 1fr 80px;background:var(--panel);padding:7px 14px;border-bottom:1px solid var(--border)"><span style="font-size:8px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--stone)">team</span><span style="font-size:8px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--stone);text-align:center">sessions</span><span style="font-size:8px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--stone);text-align:center">fullouts</span><span style="font-size:8px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--stone)">avg deductions</span><span style="font-size:8px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--stone);text-align:right">pyramid%</span></div>`;
+  TEAMS.forEach((team,i)=>{
+    const sessions=foCache[team.id]||[];const totalFo=sessions.reduce((s,x)=>s+(x.fullouts?x.fullouts.length:0),0);
+    const totalDed=sessions.reduce((sum,s)=>sum+(s.fullouts?s.fullouts.reduce((a,fo)=>a+(fo.deductions?fo.deductions.reduce((x,d)=>x+(parseFloat(d.pts||d.points)||0),0):0),0):0),0);
+    const avgDed=sessions.length>0?(totalDed/sessions.length):0;
+    let pyH=0,pyT=0;sessions.forEach(s=>{if(s.fullouts)s.fullouts.forEach(fo=>{pyT++;if(fo.pyramidHit)pyH++;});});
+    const pyP=pyT>0?Math.round((pyH/pyT)*100):null;
+    const bg=i%2===0?"var(--surface)":"transparent";
+    html+=`<div style="display:grid;grid-template-columns:160px 80px 80px 1fr 80px;padding:8px 14px;border-top:1px solid var(--border);align-items:center;background:${bg}"><span style="font-size:12px;font-weight:500;cursor:pointer;color:var(--ink)" onclick="openTeam('${team.id}')">${esc(team.name)}</span><span style="font-size:12px;color:var(--stone);text-align:center">${sessions.length}</span><span style="font-size:12px;color:var(--stone);text-align:center">${totalFo}</span><div style="display:flex;align-items:center;gap:8px"><div class="pct-bar-wrap" style="max-width:120px"><div class="pct-bar" style="width:${Math.min((avgDed/5)*100,100)}%;background:${avgDed>1?"var(--red)":avgDed>0?"var(--orange)":"var(--green)"}"></div></div><span style="font-size:12px;font-weight:600;color:${avgDed>0?"var(--red)":"#4a9d6f"}">${avgDed>0?"-"+avgDed.toFixed(2):"clean"}</span></div><span style="font-size:12px;font-weight:700;text-align:right;color:${pyP!==null?pctCol(pyP):"var(--stone)"}">${pyP!==null?pyP+"%":"--"}</span></div>`;
+  });
+  html+=`</div>`;
   el.innerHTML=html;
 }
 
