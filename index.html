@@ -340,15 +340,16 @@ const db=firebase.firestore();
 // Term 3: starts Jul 6, ends Sep 26
 // Term 4: starts Oct 5, ends Dec 13
 const TERM_WEEKS=[];
-function addWeeks(termName,startDate,count){
+function addWeeks(termName,startDate,count,startWeek){
+  const sw=parseInt((startWeek||"W1").replace("W",""));
   for(let i=0;i<count;i++){
     const d=new Date(startDate);d.setDate(d.getDate()+i*7);
-    TERM_WEEKS.push({term:termName,week:i+1,startDate:new Date(d)});
+    TERM_WEEKS.push({term:termName,week:sw+i,startDate:new Date(d)});
   }
 }
-addWeeks("T2",new Date("2026-05-04"),7); // T2 W4-W10
-addWeeks("T3",new Date("2026-07-06"),12); // T3 W1-W12
-addWeeks("T4",new Date("2026-10-05"),11); // T4 W1-W11
+addWeeks("T2",new Date("2026-05-04"),7,"W4"); // T2 W4-W10
+addWeeks("T3",new Date("2026-07-06"),12,"W1"); // T3 W1-W12
+addWeeks("T4",new Date("2026-10-05"),11,"W1"); // T4 W1-W11
 
 // ── TEAMS ──
 const TEAMS=[
@@ -897,7 +898,12 @@ function renderAllAnalytics(){
     // Header row
     html+=`<div style="display:grid;grid-template-columns:140px ${weeks.map(()=>"1fr").join(" ")};background:var(--panel);border-bottom:1px solid var(--border)">`;
     html+=`<div style="padding:6px 10px;font-size:8px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--stone)">team</div>`;
-    weeks.forEach(w=>{html+=`<div class="cal-week-col">W${w.week}</div>`;});
+    weeks.forEach(w=>{
+      const d=new Date(w.startDate);
+      const dd=String(d.getDate()).padStart(2,"0");
+      const mm=String(d.getMonth()+1).padStart(2,"0");
+      html+=`<div class="cal-week-col" style="line-height:1.3">W${w.week}<br/><span style="font-size:7px;color:var(--stone);font-weight:400">${dd}/${mm}</span></div>`;
+    });
     html+=`</div>`;
     // Team rows
     TEAMS.forEach((team,ti)=>{
