@@ -870,14 +870,17 @@ function renderTeamAnalytics(container){
 
 // ── ALL TEAMS ANALYTICS (TERM CALENDAR) ──
 function openAllAnalytics(){showScreen("all-analytics");renderAllAnalytics();}
-function getSessionDot(sessions,weekStart,weekEnd,dayIndex){
-  // dayIndex 0=first training day, 1=second
+function getSessionDots(sessions,weekStart,weekEnd,dayIndex){
+  // Returns array of dot colors, one per fullout for that training day
   const weekSessions=sessions.filter(s=>{if(!s.date)return false;const d=new Date(s.date+"T12:00:00");return d>=weekStart&&d<=weekEnd;}).sort((a,b)=>a.date.localeCompare(b.date));
-  const s=weekSessions[dayIndex];if(!s)return"empty";
-  const totalDed=s.fullouts?s.fullouts.reduce((sum,fo)=>sum+(fo.deductions?fo.deductions.reduce((a,d)=>a+(parseFloat(d.pts||d.points)||0),0):0),0):0;
-  if(totalDed===0)return"green";
-  if(totalDed<=1)return"orange";
-  return"red";
+  const s=weekSessions[dayIndex];
+  if(!s||!s.fullouts||!s.fullouts.length)return[];
+  return s.fullouts.map(fo=>{
+    const ded=fo.deductions?fo.deductions.reduce((a,d)=>a+(parseFloat(d.pts||d.points)||0),0):0;
+    if(ded===0)return"green";
+    if(ded<=1)return"orange";
+    return"red";
+  });
 }
 
 function renderAllAnalytics(){
@@ -904,9 +907,10 @@ function renderAllAnalytics(){
       html+=`<div style="padding:6px 10px;font-size:11px;font-weight:500;cursor:pointer;color:var(--ink)" onclick="openTeam('${team.id}')">${esc(team.name)}</div>`;
       weeks.forEach(w=>{
         const weekEnd=new Date(w.startDate);weekEnd.setDate(weekEnd.getDate()+6);
-        const d1=getSessionDot(sessions,w.startDate,weekEnd,0);
-        const d2=getSessionDot(sessions,w.startDate,weekEnd,1);
-        html+=`<div style="display:flex;justify-content:center;gap:4px;padding:6px 4px;border-right:1px solid var(--border)"><div class="cal-dot ${d1}"></div><div class="cal-dot ${d2}"></div></div>`;
+        const dots1=getSessionDots(sessions,w.startDate,weekEnd,0);
+        const dots2=getSessionDots(sessions,w.startDate,weekEnd,1);
+        const renderDots=dots=>dots.length?dots.map(c=>`<div class="cal-dot ${c}"></div>`).join(""):`<div class="cal-dot empty"></div>`;
+        html+=`<div style="display:flex;justify-content:center;align-items:center;gap:3px;padding:5px 4px;border-right:1px solid var(--border)">${renderDots(dots1)}<div style="width:1px;height:10px;background:var(--border2);margin:0 2px;flex-shrink:0"></div>${renderDots(dots2)}</div>`;
       });
       html+=`</div>`;
     });
