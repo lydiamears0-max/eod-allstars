@@ -273,11 +273,7 @@ body{font-family:'DM Sans',sans-serif;color:var(--ink);}
       <div class="panel">
         <div class="field-block"><label class="lbl">class date</label><input type="date" class="dark-inp" id="b-date" oninput="onDateChange()"/><div style="font-size:10px;color:#666;margin-top:2px" id="b-date-prev"></div></div>
         <div class="field-block"><label class="lbl">time</label><div class="prog-track"><div class="prog-fill" id="b-prog" style="width:0%"></div></div><div class="prog-meta"><span id="b-used">0 min</span><span id="b-total"></span></div></div>
-        <div class="field-block" id="b-issues-wrap" style="display:none">
-          <label class="lbl">problems to fix</label>
-          <div id="b-issues-list" style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px"></div>
-          <div style="display:flex;gap:6px"><input id="b-new-prob-inp" placeholder="Add a problem..." style="flex:1;padding:6px 8px;background:#222;border:1px solid #3a3a3a;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:11px;color:#ddd;outline:none" onkeydown="if(event.key==='Enter')addBuilderProb()"/><button onclick="addBuilderProb()" style="padding:6px 10px;background:rgba(255,255,255,.08);border:1px solid #444;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;color:#ccc;cursor:pointer">+ add</button></div>
-        </div>
+
       </div>
     </div>
     <div class="builder-right">
@@ -414,6 +410,7 @@ function getCategories(team){
   const cats=[{id:"conditioning",label:"Conditioning",icon:"&#9672;"}];
   (team.stunts||[]).forEach(s=>{cats.push({id:s.id,label:s.label,icon:"&#9733;",stunt:true,stuntKey:s.id});});
   cats.push(
+    {id:"problems",label:"Problems to Fix",icon:"&#9998;"},
     {id:"tosses",label:tossLabel,icon:"&#9689;"},
     {id:"jumps",label:"Jumps",icon:"&#9670;"},
     {id:"standing_tumbling",label:"Standing Tumbling",icon:"&#9678;"},
@@ -868,6 +865,12 @@ function renderPlanSections(plan,team){
     html+=`<span class="dur-tag">${sec.duration} min</span><button class="section-timer-btn" id="sec-btn-${sec.id}" onclick="toggleSectionTimer(${durSecs},'${esc(cat.label||"")} (${sec.duration}min)','${sec.id}')">start</button><span class="section-timer-countdown" id="sec-cd-${sec.id}"></span></div></div><div class="plan-block-body">`;
     if(sec.details)html+=`<div class="plan-field"><div class="plan-field-lbl">breakdown</div><div class="detail-text">${esc(sec.details)}</div></div>`;
     if(cat.stunt){const stunt=(team.stunts||[]).find(s=>s.id===cat.stuntKey);const athletes=stunt?stunt.athletes:[];html+=`<div class="plan-field"><div class="plan-field-lbl">stunt tracking</div><div class="stunt-tbl"><div class="stunt-tbl-hd"><span>group</span><span>attempts</span><span>hits</span></div>${athletes.map(name=>`<div class="stunt-tbl-row"><span style="font-size:11px">${esc(name)}'s group</span><input type="number" min="0" class="stunt-inp" placeholder="--" value="${esc(String(sec.stuntData&&sec.stuntData[name]?sec.stuntData[name].attempts||"":""))}" oninput="updateStunt('${sec.id}','${name}','attempts',this.value)"/><input type="number" min="0" class="stunt-inp" placeholder="--" value="${esc(String(sec.stuntData&&sec.stuntData[name]?sec.stuntData[name].hits||"":""))}" oninput="updateStunt('${sec.id}','${name}','hits',this.value)"/></div>`).join("")}</div></div>`;}
+    if(cat.id==="problems"){
+      const items=clCache[curTeamId]||[];
+      const pending=items.filter(i=>!i.done);
+      if(pending.length){html+=`<div class="plan-field"><div class="plan-field-lbl">problems to work on</div><div style="border:1px solid var(--border);border-radius:7px;overflow:hidden">${pending.map(item=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--border);cursor:pointer" onclick="togglePlanProblem('${item.id}')"><div style="width:18px;height:18px;border:1.5px solid ${item.done?"var(--pink)":"var(--border)"};border-radius:3px;flex-shrink:0;background:${item.done?"var(--pink)":"transparent"};display:flex;align-items:center;justify-content:center"><span style="color:white;font-size:9px;font-weight:700">${item.done?"v":""}</span></div><span style="font-size:12px;color:${item.done?"var(--stone)":"var(--ink)"};${item.done?"text-decoration:line-through":""}">${esc(item.text)}</span></div>`).join("")}</div></div>`;}
+      else{html+=`<div class="plan-field" style="color:var(--stone);font-size:12px;font-style:italic">No open problems — add some from the checklist!</div>`;}
+    }
     html+=`<div class="plan-field"><div class="plan-field-lbl">comments</div><textarea class="plan-ta" rows="2" placeholder="notes from practice..." oninput="updateComment('${sec.id}',this.value)">${esc(sec.comments||"")}</textarea></div></div></div>`;
     return html;
   }).join("")+`<div class="end-mark">-- end of plan --</div>`;
