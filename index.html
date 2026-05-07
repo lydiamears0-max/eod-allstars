@@ -273,6 +273,11 @@ body{font-family:'DM Sans',sans-serif;color:var(--ink);}
       <div class="panel">
         <div class="field-block"><label class="lbl">class date</label><input type="date" class="dark-inp" id="b-date" oninput="onDateChange()"/><div style="font-size:10px;color:#666;margin-top:2px" id="b-date-prev"></div></div>
         <div class="field-block"><label class="lbl">time</label><div class="prog-track"><div class="prog-fill" id="b-prog" style="width:0%"></div></div><div class="prog-meta"><span id="b-used">0 min</span><span id="b-total"></span></div></div>
+        <div class="field-block" id="b-issues-wrap" style="display:none">
+          <label class="lbl">problems to fix</label>
+          <div id="b-issues-list" style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px"></div>
+          <div style="display:flex;gap:6px"><input id="b-new-prob-inp" placeholder="Add a problem..." style="flex:1;padding:6px 8px;background:#222;border:1px solid #3a3a3a;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:11px;color:#ddd;outline:none" onkeydown="if(event.key==='Enter')addBuilderProb()"/><button onclick="addBuilderProb()" style="padding:6px 10px;background:rgba(255,255,255,.08);border:1px solid #444;border-radius:6px;font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;color:#ccc;cursor:pointer">+ add</button></div>
+        </div>
       </div>
     </div>
     <div class="builder-right">
@@ -314,9 +319,9 @@ body{font-family:'DM Sans',sans-serif;color:var(--ink);}
       <div class="panel">
         <div><div style="font-size:10px;color:#666;margin-bottom:2px" id="p-time"></div><div style="font-size:10px;color:#777" id="p-date"></div><div style="display:inline-block;margin-top:6px;background:#222;border-radius:100px;padding:3px 10px;font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:#777" id="p-dur"></div></div>
         <div><div class="lbl" style="margin-bottom:6px">attendance</div><div class="attend-list" id="attend-list"></div></div>
-        <div id="last-session-wrap" style="display:none">
-          <div class="lbl" style="margin-bottom:6px">last session notes</div>
-          <div id="last-session-content"></div>
+        <div id="p-problems-wrap" style="display:none">
+          <div class="lbl" style="margin-bottom:6px;margin-top:4px">focus: problems to fix</div>
+          <div id="p-problems-list"></div>
         </div>
       </div>
     </div>
@@ -426,6 +431,7 @@ function getCategories(team){
 let foCache={},clCache={},plansCache={};
 let curTeamId=null,curTeamTab="fullouts",curFoId=null,curPlanId=null;
 let activeDedDD=null,pickedCat=null,sections=[],curTplId=null,saveTimer=null;
+let selClIds=new Set();
 // Timers
 let sectionTimerInterval=null,sectionTimerSecs=0,sectionTimerSecId=null;
 let freeTimerInterval=null,freeTimerSecs=0,freeTimerRunning=false;
@@ -715,13 +721,14 @@ async function delPlan(e,id){e.stopPropagation();if(!confirm("Delete?"))return;a
 
 function startBuilder(tplId,existing){
   curTplId=tplId;const team=getTeam(curTeamId);const t=team.templates[tplId];
+  selClIds=new Set(existing?.checklistIds||[]);
   if(existing){curPlanId=existing.id;sections=JSON.parse(JSON.stringify(existing.sections||[]));document.getElementById("b-date").value=existing.date||"";}
   else{curPlanId=uid();sections=[];const dayMap={monday:1,tuesday:2,wednesday:3,thursday:4,friday:5,saturday:6,sunday:0};document.getElementById("b-date").value=nwd(dayMap[tplId]??1);}
   pickedCat=null;
   document.getElementById("b-hd-title").textContent=t.display+" class plan";
   document.getElementById("b-total").textContent=t.duration+" min total";
   sd("builder","","");
-  renderCatGrid();renderBuilderSecs();updateTimebar();
+  renderCatGrid();renderBuilderSecs();updateTimebar();renderBuilderIssues();
   showScreen("builder");
 }
 function onDateChange(){const v=document.getElementById("b-date").value;document.getElementById("b-date-prev").textContent=v?fmtDate(v):"";updateTimebar();if(v)autoSave();}
@@ -755,7 +762,7 @@ function renderBuilderSecs(){
     return`<div class="bsec"><div class="bsec-top"><div class="bsec-lft"><span class="bsec-num">${String(i+1).padStart(2,"0")}</span><span class="cat-ic">${cat.icon||""}</span><span class="bsec-lbl">${cat.label||""}</span></div><div class="bsec-acts"><button class="ic-btn" onclick="moveSection(${i},-1)"${i===0?" disabled":""}>&#9650;</button><button class="ic-btn" onclick="moveSection(${i},1)"${i===sections.length-1?" disabled":""}>&#9660;</button><button class="ic-btn danger" onclick="removeSection('${s.id}')">x</button></div></div><div class="field-block"><span class="lbl-xs">duration</span><div class="tchips">${TIMES.map(t=>`<button class="tchip${s.duration===t?" sel":""}" onclick="setSecDur('${s.id}',${t})">${t}m</button>`).join("")}</div></div><div class="field-block"><span class="lbl-xs">breakdown / details</span><textarea class="ta" rows="2" placeholder="focus points..." oninput="setSecDetails('${s.id}',this.value)">${esc(s.details||"")}</textarea></div></div>`;
   }).join("");
 }
-function buildPlanObj(){return{id:curPlanId,templateId:curTplId,date:document.getElementById("b-date").value,sections:JSON.parse(JSON.stringify(sections)),attendance:getPlan(curPlanId)?.attendance||{}};}
+function buildPlanObj(){return{id:curPlanId,templateId:curTplId,date:document.getElementById("b-date").value,sections:JSON.parse(JSON.stringify(sections)),attendance:getPlan(curPlanId)?.attendance||{},checklistIds:[...selClIds]};}
 async function autoSave(){const p=buildPlanObj();sd("builder","busy","saving");try{await planSave(p);sd("builder","ok","saved");}catch{sd("builder","err","failed");}}
 async function savePlan(){const p=buildPlanObj();sd("builder","busy","saving");try{await planSave(p);sd("builder","ok","saved");openPlan(p.id);}catch{sd("builder","err","failed");}}
 
@@ -770,13 +777,62 @@ function openPlan(id){
   document.getElementById("p-dur").textContent=total+" min — "+t.duration+" min total";
   sd("plan","ok","");
   renderAttendance(plan,team);
-  renderLastSessionNotes(plan,team);
+  renderPlanProblems(plan);
   renderPlanSections(plan,team);
   stopSectionTimer();
   showScreen("plan-view");
 }
 
-function renderLastSessionNotes(currentPlan,team){
+function renderBuilderIssues(){
+  const wrap=document.getElementById("b-issues-wrap");const list=document.getElementById("b-issues-list");
+  if(!wrap||!list)return;
+  wrap.style.display="flex";
+  const items=clCache[curTeamId]||[];
+  const pending=items.filter(i=>!i.done);
+  if(!pending.length){list.innerHTML='<div style="font-size:11px;color:#444;font-style:italic">No open problems yet.</div>';return;}
+  list.innerHTML=pending.map(item=>{
+    const sel=selClIds.has(item.id);
+    return`<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid ${sel?"#aaa":"#2a2a2a"};border-radius:6px;cursor:pointer;background:${sel?"#2a2a2a":"transparent"}" onclick="toggleBuilderIssue('${item.id}')">
+      <div style="width:14px;height:14px;border:1.5px solid ${sel?"var(--pink)":"#444"};border-radius:3px;flex-shrink:0;background:${sel?"var(--pink)":"transparent"};display:flex;align-items:center;justify-content:center"><span style="color:white;font-size:8px;font-weight:700">${sel?"v":""}</span></div>
+      <span style="font-size:11px;color:${sel?"#ddd":"#666"}">${esc(item.text)}</span>
+    </div>`;
+  }).join("");
+}
+
+function toggleBuilderIssue(id){
+  if(selClIds.has(id))selClIds.delete(id);else selClIds.add(id);
+  renderBuilderIssues();
+}
+
+async function addBuilderProb(){
+  const inp=document.getElementById("b-new-prob-inp");const txt=inp?inp.value.trim():"";if(!txt)return;
+  inp.value="";
+  const id=uid();const item={id,text:txt,done:false,created_at:new Date().toISOString()};
+  await clCol(curTeamId).doc(id).set(item);
+  selClIds.add(id);
+  renderBuilderIssues();
+}
+
+function renderPlanProblems(plan){
+  const wrap=document.getElementById("p-problems-wrap");const list=document.getElementById("p-problems-list");
+  if(!wrap||!list)return;
+  const ids=plan?.checklistIds||[];
+  const items=(clCache[curTeamId]||[]).filter(i=>ids.includes(i.id));
+  if(!items.length){wrap.style.display="none";return;}
+  wrap.style.display="block";
+  list.innerHTML=items.map(item=>`<div style="display:flex;align-items:flex-start;gap:7px;padding:6px 8px;border-radius:5px;cursor:pointer" onclick="togglePlanProblem('${item.id}')">
+    <div style="width:16px;height:16px;border:1.5px solid ${item.done?"var(--pink)":"#3a3a3a"};border-radius:3px;flex-shrink:0;margin-top:1px;background:${item.done?"var(--pink)":"transparent"};display:flex;align-items:center;justify-content:center"><span style="color:white;font-size:8px;font-weight:700">${item.done?"v":""}</span></div>
+    <span style="font-size:11px;color:${item.done?"#555":"#aaa"};${item.done?"text-decoration:line-through":""}">${esc(item.text)}</span>
+  </div>`).join("");
+}
+
+async function togglePlanProblem(id){
+  const i=(clCache[curTeamId]||[]).find(x=>x.id===id);if(!i)return;
+  i.done=!i.done;await clCol(curTeamId).doc(id).set(i);
+  renderPlanProblems(getPlan());
+}
+
+function renderLastSessionNotes(){} // kept for compatibility
   const wrap=document.getElementById("last-session-wrap");const content=document.getElementById("last-session-content");
   const plans=(plansCache[curTeamId]||[]).filter(p=>p.templateId===currentPlan.templateId&&p.id!==currentPlan.id&&p.date&&p.date<(currentPlan.date||"9999")).sort((a,b)=>b.date.localeCompare(a.date));
   if(!plans.length){wrap.style.display="none";return;}
