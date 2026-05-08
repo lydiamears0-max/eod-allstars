@@ -1875,7 +1875,7 @@ function renderPPHome(container){
       </button>
       <button type="button" class="pp-tile big" data-pp-home-action="goto-fullout" style="--tile-accent:#c4559a;background:linear-gradient(135deg,#fff5fa 0%,#ffeaf5 100%)">
         <div class="pp-tile-icon">💪</div>
-        <div class="pp-tile-title" style="color:#9b3878">Fullout Tracker</div>
+        <div class="pp-tile-title" style="color:#9b3878">Fullout</div>
         <div class="pp-tile-sub">${foCount>0?foCount+(foCount===1?" fullout":" fullouts")+" today"+(foDed>0?" · −"+foDed.toFixed(2):""):"score every fullout"}</div>
       </button>
     </div>
@@ -1925,7 +1925,20 @@ function renderPPHome(container){
       if(!btn) return;
       const action = btn.getAttribute("data-pp-home-action");
       if(action==="goto-stunts"){ ppSound("tap"); curTeamTab="pp_stunt_training"; renderTeamTab(); }
-      else if(action==="goto-fullout"){ ppSound("tap"); curTeamTab="pp_fullout"; renderTeamTab(); }
+      else if(action==="goto-fullout"){
+        ppSound("tap");
+        curTeamTab="pp_fullout";
+        // Entry-only: open the most recent today's fullout, or create a new one if none.
+        const today=new Date().toISOString().split("T")[0];
+        const todayFos=Object.values(ppFoCache).filter(f=>f.date===today)
+          .sort((a,b)=>(b.startedAt||"").localeCompare(a.startedAt||""));
+        if(todayFos.length){
+          ppFoCurId=todayFos[0].id;
+          renderTeamTab();
+        }else{
+          ppFoNewFullout(); // creates fresh fullout, sets ppFoCurId, triggers render
+        }
+      }
       else if(action==="goto-team-stats"){ ppSound("tap"); curTeamTab="pp_team_stats"; renderTeamTab(); }
       else if(action==="goto-stars"){ ppSound("tap"); curTeamTab="pp_star_chart"; renderTeamTab(); }
       else if(action==="goto-houses"){ ppSound("tap"); curTeamTab="pp_colour_houses"; renderTeamTab(); }
@@ -2581,6 +2594,26 @@ function ppToggleFullout(){
 
 // ── PINK PANTHERS TEAM STATS ──
 let ppStatsFilter="today"; // today | week | total | fullout
+let ppFoChartFlyer="all"; // sub-tab when filter==="fullout": "all" | "Ruby" | "Emma" | "Amarni" | "Freyah" | "Sienna"
+
+// How much did this flyer contribute to a single fullout's total deduction?
+// Sums their cells across all stunts they appear in + any tumbling entries tagged with their name.
+function ppFoFlyerContribution(fo, flyerName){
+  if(!fo) return 0;
+  let total = 0;
+  const prefix = flyerName.toLowerCase() + "__";
+  if(fo.cells){
+    for(const key in fo.cells){
+      if(key.startsWith(prefix)) total += ppFoCellTotalDeduction(fo.cells[key]);
+    }
+  }
+  if(fo.tumbling){
+    fo.tumbling.forEach(t=>{
+      if(t.name && t.name.toLowerCase() === flyerName.toLowerCase()) total += (t.value||0.25);
+    });
+  }
+  return Math.round(total*100)/100;
+}
 
 function ppFilterSessions(sessions,filter){
   if(!sessions||!sessions.length)return[];
@@ -2631,34 +2664,73 @@ function renderPPTeamStats(container){
     const labels={today:"Today",week:"Week",total:"Total",fullout:"Fullout"};
     html+=`<button type="button" data-pp-action="set-filter" data-pp-filter="${f}" style="padding:9px 22px;border:none;border-radius:100px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;letter-spacing:.5px;cursor:pointer;-webkit-tap-highlight-color:rgba(196,85,154,.2);touch-action:manipulation;transition:all .15s;${active?"background:linear-gradient(135deg,#e91e8c,#c4559a);color:white;box-shadow:0 4px 14px rgba(196,85,154,.4)":"background:white;color:var(--stone);border:1.5px solid var(--border)"}">${labels[f]}</button>`;
   });
-  html+=`</div>
+  html+=`</div>`;
 
-    <!-- 4 STUNT CARDS GRID -->
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:16px;max-width:1100px;margin:0 auto">`;
+  if(filter==="fullout"){
+    // ── FULLOUT CHART VIEW ──
+    // Sub-tabs: All + each flyer
+    const subTabs=["all", ...ppAllFlyers()];
+    html+=`<div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:18px;-webkit-overflow-scrolling:touch">`;
+    subTabs.forEach(t=>{
+      const active=t===ppFoChartFlyer;
+      const label=t==="all"?"All":t+"'s group";
+      html+=`<button type="button" data-pp-action="set-chart-flyer" data-pp-flyer="${esc(t)}" style="flex-shrink:0;padding:8px 16px;border:1.5px solid ${active?"#c4559a":"var(--border)"};background:${active?"linear-gradient(135deg,#e91e8c,#c4559a)":"white"};color:${active?"white":"var(--stone)"};border-radius:100px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;letter-spacing:.5px;cursor:pointer;-webkit-tap-highlight-color:rgba(196,85,154,.15);touch-action:manipulation">${esc(label)}</button>`;
+    });
+    html+=`</div>`;
 
-  stunts.forEach(stunt=>{
-    // Build rows for this stunt
-    const rows=(stunt.groups||[]).map(g=>{
-      let atts, hits;
-      if(filter==="fullout"){
-        // Derive from ppFoCache: each (flyer × stunt) cell that's hit/not_hit counts as one attempt.
-        const cells=[];
-        Object.values(ppFoCache).forEach(fo=>{
-          if(!fo.cells) return;
-          const cell=fo.cells[g.name.toLowerCase()+"__"+stunt.id];
-          if(cell && (cell.status==="hit" || cell.status==="not_hit")) cells.push(cell);
+    // Build the chart: weekly rows of fullout pills.
+    const fullouts=Object.values(ppFoCache);
+    if(!fullouts.length){
+      html+=`<div style="text-align:center;padding:60px 20px;color:var(--stone);font-style:italic;font-size:14px">No fullouts yet ✨</div>`;
+    }else{
+      const groups=ppFoGroupByWeek(fullouts);
+      // Pill builder — gradient/intensity based on deduction magnitude
+      const pillHtml=(value, foId)=>{
+        if(value===0){
+          return `<div title="hit zero" style="display:inline-flex;align-items:center;gap:5px;padding:10px 14px;background:linear-gradient(135deg,#fef9c4,#fde68a);border:1.5px solid #f0c860;border-radius:100px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;color:#7a5f1a;flex-shrink:0">✨ HIT ZERO</div>`;
+        }
+        // Color intensity: 0 → ~3 mapped to soft pink → deep red
+        const intensity=Math.min(value/3, 1);
+        const bg=`linear-gradient(135deg, hsl(${355-intensity*5}, ${60+intensity*20}%, ${94-intensity*16}%), hsl(${355-intensity*5}, ${60+intensity*20}%, ${88-intensity*22}%))`;
+        const txt=intensity>0.5?"#7a1f17":"#b33a2d";
+        const border=`hsl(${355}, ${50+intensity*15}%, ${78-intensity*18}%)`;
+        return `<div style="display:inline-flex;align-items:center;justify-content:center;min-width:62px;padding:10px 14px;background:${bg};border:1.5px solid ${border};border-radius:100px;font-family:'DM Serif Display',serif;font-style:italic;font-size:16px;font-weight:600;color:${txt};flex-shrink:0">−${value.toFixed(2)}</div>`;
+      };
+      groups.forEach(g=>{
+        // Sort fullouts within the week chronologically (left = older, right = newer)
+        const sortedFos = g.fullouts.slice().sort((a,b)=>(a.startedAt||"").localeCompare(b.startedAt||""));
+        // Per-week sum for the active filter
+        const weekSum = Math.round(sortedFos.reduce((s,fo)=>{
+          return s + (ppFoChartFlyer==="all" ? ppFoTotalDeduction(fo) : ppFoFlyerContribution(fo, ppFoChartFlyer));
+        }, 0)*100)/100;
+        html+=`<div style="margin-bottom:22px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:0 6px">
+            <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--stone)">${esc(ppFoWeekLabel(g.monday))}</div>
+            ${weekSum>0?`<div style="font-family:'DM Serif Display',serif;font-size:13px;font-style:italic;color:#b33a2d;font-weight:600">week total −${weekSum.toFixed(2)}</div>`:""}
+          </div>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;padding:14px 16px;background:white;border-radius:14px;box-shadow:0 2px 10px rgba(0,0,0,.05)">`;
+        sortedFos.forEach(fo=>{
+          const val = ppFoChartFlyer==="all" ? ppFoTotalDeduction(fo) : ppFoFlyerContribution(fo, ppFoChartFlyer);
+          html+=pillHtml(val, fo.id);
         });
-        atts=cells.length;
-        hits=cells.filter(c=>c.status==="hit").length;
-      }else{
+        html+=`</div></div>`;
+      });
+    }
+  }else{
+    // ── EXISTING PER-STUNT CARDS GRID (Today / Week / Total filters) ──
+    html+=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:16px;max-width:1100px;margin:0 auto">`;
+
+    stunts.forEach(stunt=>{
+      // Build rows for this stunt
+      const rows=(stunt.groups||[]).map(g=>{
+        let atts, hits;
         const sessions=ppCache[stunt.id+"_"+g.id]||[];
         const filtered=ppFilterSessions(sessions,filter);
         atts=filtered.reduce((a,s)=>a+(s.attempts||0),0);
         hits=filtered.reduce((a,s)=>a+(s.hits||0),0);
-      }
-      const pct=atts>0?Math.round((hits/atts)*100):null;
-      return{groupId:g.id,name:g.name,atts,hits,pct};
-    });
+        const pct=atts>0?Math.round((hits/atts)*100):null;
+        return{groupId:g.id,name:g.name,atts,hits,pct};
+      });
     const crowned=ppCrownWinners(rows);
     const hasGroups=(stunt.groups||[]).length>0;
 
@@ -2694,9 +2766,11 @@ function renderPPTeamStats(container){
       });
     }
     html+=`</div>`;
-  });
+    }); // end stunts.forEach
+    html+=`</div>`; // close the per-stunt cards grid
+  } // end if/else on filter
 
-  html+=`</div></div>`;
+  html+=`</div>`; // close pp-stats-wrap
   container.innerHTML=html;
 
   const wrap=document.getElementById("pp-stats-wrap");
@@ -2708,6 +2782,7 @@ function renderPPTeamStats(container){
       const action=btn.getAttribute("data-pp-action");
       if(action==="back-to-stunts"){curTeamTab="pp_home";renderTeamTab();}
       else if(action==="set-filter"){ppStatsFilter=btn.getAttribute("data-pp-filter");renderTeamTab();}
+      else if(action==="set-chart-flyer"){ppFoChartFlyer=btn.getAttribute("data-pp-flyer");renderTeamTab();}
     });
   }
 }
@@ -2862,208 +2937,20 @@ function ppFoFmtTime(fo){
 
 function renderPPFullout(container){
   startPPListener();
-  // Stale id (e.g. listener purged it) — drop back to tabs view
+  // Stale id (e.g. listener purged it) — drop and create a new one
   if(ppFoCurId && !ppFoCache[ppFoCurId]) ppFoCurId=null;
-  if(ppFoCurId){
-    renderPPFulloutEdit(container);
-  }else{
-    renderPPFulloutTabs(container);
+  if(!ppFoCurId){
+    // Try most recent today's fullout, otherwise create new
+    const today=new Date().toISOString().split("T")[0];
+    const todayFos=Object.values(ppFoCache).filter(f=>f.date===today)
+      .sort((a,b)=>(b.startedAt||"").localeCompare(a.startedAt||""));
+    if(todayFos.length){ ppFoCurId=todayFos[0].id; }
+    else{ ppFoNewFullout(); return; } // ppFoNewFullout already triggers render
   }
+  renderPPFulloutEdit(container);
   if(ppFoPopup) ppFoRenderPopup();
 }
 
-// ── TABS VIEW (Overview / per-stunt / Tumbling) ──
-function renderPPFulloutTabs(container){
-  const tabs=[
-    {id:"overview",label:"Overview"},
-    {id:"stunt_pp_s1",label:"Stunt 1"},
-    {id:"stunt_pp_s2",label:"Stunt 2"},
-    {id:"stunt_pp_s3",label:"Stunt 3"},
-    {id:"stunt_pp_pyramid",label:"Pyramid"},
-    {id:"tumbling",label:"Tumbling"}
-  ];
-  let html=`<div style="flex:1;overflow-y:auto;padding:18px 16px 60px;background:linear-gradient(135deg,#fff0f8,#f8f0ff);box-sizing:border-box" class="pp-bigscreen-scope" id="pp-fo-tabs-wrap">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-      <button type="button" data-pp-fo-action="back-home" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--stone);padding:0">&#8592;</button>
-      <div style="flex:1">
-        <div style="font-family:'Bagel Fat One','DM Serif Display',sans-serif;font-size:28px;line-height:1;color:var(--ink)">Fullout Tracker</div>
-      </div>
-      <button type="button" data-pp-fo-action="new-fullout" style="padding:11px 20px;background:linear-gradient(135deg,#e91e8c,#c4559a);color:white;border:none;border-radius:100px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;letter-spacing:.5px;cursor:pointer;box-shadow:0 4px 14px rgba(196,85,154,.35);-webkit-tap-highlight-color:rgba(255,255,255,.2);touch-action:manipulation">+ new fullout</button>
-    </div>
-    <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:18px;-webkit-overflow-scrolling:touch">`;
-  tabs.forEach(t=>{
-    const active=ppFoTab===t.id;
-    html+=`<button type="button" data-pp-fo-action="set-tab" data-pp-fo-tab="${t.id}" style="flex-shrink:0;padding:9px 17px;border:1.5px solid ${active?"#c4559a":"var(--border)"};background:${active?"linear-gradient(135deg,#e91e8c,#c4559a)":"white"};color:${active?"white":"var(--stone)"};border-radius:100px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;letter-spacing:.5px;cursor:pointer;-webkit-tap-highlight-color:rgba(196,85,154,.15);touch-action:manipulation">${esc(t.label)}</button>`;
-  });
-  html+=`</div>
-    <div id="pp-fo-tab-content"></div>
-  </div>
-  <div id="pp-fo-popup-mount"></div>`;
-  container.innerHTML=html;
-
-  const contentEl=document.getElementById("pp-fo-tab-content");
-  if(ppFoTab==="overview") renderPPFulloutOverviewContent(contentEl);
-  else if(ppFoTab.startsWith("stunt_")) renderPPFulloutStuntContent(contentEl, ppFoTab.slice(6));
-  else if(ppFoTab==="tumbling") renderPPFulloutTumblingContent(contentEl);
-
-  // Single delegated handler for tabs view
-  const wrap=document.getElementById("pp-fo-tabs-wrap");
-  if(wrap && !wrap._ppFoTabsDelegated){
-    wrap._ppFoTabsDelegated=true;
-    wrap.addEventListener("click",e=>{
-      const btn=e.target.closest("[data-pp-fo-action]");
-      if(!btn) return;
-      const action=btn.getAttribute("data-pp-fo-action");
-      if(action==="back-home"){ ppSound("tap"); curTeamTab="pp_home"; renderTeamTab(); }
-      else if(action==="new-fullout"){ ppSound("tap"); ppFoNewFullout(); }
-      else if(action==="set-tab"){ ppSound("tap"); ppFoTab=btn.getAttribute("data-pp-fo-tab"); renderTeamTab(); }
-      else if(action==="open-fo"){ ppSound("tap"); ppFoCurId=btn.getAttribute("data-pp-fo-id"); renderTeamTab(); }
-      else if(action==="delete-fo"){
-        const id=btn.getAttribute("data-pp-fo-id");
-        if(confirm("Delete this fullout? This can't be undone.")) ppFoDelete(id);
-      }
-    });
-  }
-}
-
-// "Overview" tab — list every fullout grouped by week, with HIT ZERO badges or total deductions.
-function renderPPFulloutOverviewContent(container){
-  const fullouts=Object.values(ppFoCache);
-  if(!fullouts.length){
-    container.innerHTML=`<div style="text-align:center;padding:60px 20px;color:var(--stone);font-style:italic;font-size:14px">No fullouts yet. Tap "+ new fullout" to start your first one ✨</div>`;
-    return;
-  }
-  const groups=ppFoGroupByWeek(fullouts);
-  let html="";
-  groups.forEach(g=>{
-    html+=`<div style="margin-bottom:24px">
-      <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--stone);margin-bottom:10px;padding-left:6px">${esc(ppFoWeekLabel(g.monday))}</div>
-      <div style="display:flex;flex-direction:column;gap:8px">`;
-    g.fullouts.forEach(fo=>{
-      const ded=ppFoTotalDeduction(fo);
-      const cellCount=fo.cells?Object.values(fo.cells).filter(c=>c.status).length:0;
-      const tumbCount=fo.tumbling?fo.tumbling.length:0;
-      const isHitZero=cellCount>0 && ded===0;
-      const isEmpty=cellCount===0 && tumbCount===0;
-      html+=`<div style="display:flex;align-items:center;gap:12px;background:white;border-radius:14px;padding:14px 18px;box-shadow:0 2px 10px rgba(0,0,0,.05);cursor:pointer;-webkit-tap-highlight-color:rgba(196,85,154,.15);touch-action:manipulation" data-pp-fo-action="open-fo" data-pp-fo-id="${esc(fo.id)}">
-        <div style="flex:1;min-width:0">
-          <div style="font-family:'DM Serif Display',serif;font-size:18px;font-style:italic;color:var(--ink)">${esc(ppFoFmtTime(fo))}</div>
-          <div style="font-size:11px;color:var(--stone);margin-top:2px">${isEmpty?"empty — tap to fill in":cellCount+" "+(cellCount===1?"cell":"cells")+" marked"+(tumbCount?" · "+tumbCount+" tumbling":"")}</div>
-        </div>
-        ${isHitZero
-          ? `<div style="display:flex;align-items:center;gap:6px;padding:7px 14px;background:linear-gradient(135deg,#fef9c4,#fde68a);border:1.5px solid #f0c860;border-radius:100px;font-size:11px;font-weight:700;letter-spacing:1px;color:#7a5f1a;flex-shrink:0">✨ HIT ZERO</div>`
-          : ded>0 ? `<div style="font-family:'DM Serif Display',serif;font-size:24px;font-style:italic;color:#b33a2d;font-weight:600;line-height:1;flex-shrink:0">−${ded.toFixed(2)}</div>` : ""}
-        <button type="button" data-pp-fo-action="delete-fo" data-pp-fo-id="${esc(fo.id)}" style="background:transparent;border:none;cursor:pointer;font-size:14px;color:var(--stone);padding:4px 8px;-webkit-tap-highlight-color:transparent;flex-shrink:0" title="Delete">✕</button>
-      </div>`;
-    });
-    html+=`</div></div>`;
-  });
-  container.innerHTML=html;
-}
-
-// Per-stunt tab — list every fullout's deductions for THIS stunt only.
-function renderPPFulloutStuntContent(container, stuntId){
-  const fullouts=Object.values(ppFoCache);
-  if(!fullouts.length){
-    container.innerHTML=`<div style="text-align:center;padding:60px 20px;color:var(--stone);font-style:italic;font-size:14px">No fullouts yet ✨</div>`;
-    return;
-  }
-  const groups=ppFoGroupByWeek(fullouts);
-  let html="";
-  groups.forEach(g=>{
-    html+=`<div style="margin-bottom:24px">
-      <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--stone);margin-bottom:10px;padding-left:6px">${esc(ppFoWeekLabel(g.monday))}</div>
-      <div style="display:flex;flex-direction:column;gap:8px">`;
-    g.fullouts.forEach(fo=>{
-      // All cells for this stunt (any flyer)
-      const stuntCells=[];
-      if(fo.cells){
-        for(const key in fo.cells){
-          if(key.endsWith("__"+stuntId)){
-            const flyerName=key.split("__")[0];
-            stuntCells.push({cell:fo.cells[key], flyer:flyerName});
-          }
-        }
-      }
-      const stuntDed=Math.round(stuntCells.reduce((s,sc)=>s+ppFoCellTotalDeduction(sc.cell),0)*100)/100;
-      const issueCells=stuntCells.filter(sc=>sc.cell.status==="not_hit"||sc.cell.status==="absent"||sc.cell.status==="missed"||sc.cell.status==="na");
-      const noData=stuntCells.length===0;
-      const isHitZero=stuntCells.length>0 && issueCells.length===0;
-      html+=`<div style="background:white;border-radius:14px;padding:14px 18px;box-shadow:0 2px 10px rgba(0,0,0,.05);cursor:pointer;-webkit-tap-highlight-color:rgba(196,85,154,.15);touch-action:manipulation" data-pp-fo-action="open-fo" data-pp-fo-id="${esc(fo.id)}">
-        <div style="display:flex;align-items:center;gap:12px;${issueCells.length?"margin-bottom:10px":""}">
-          <div style="flex:1;font-family:'DM Serif Display',serif;font-size:17px;font-style:italic;color:var(--ink)">${esc(ppFoFmtTime(fo))}</div>
-          ${noData
-            ? `<div style="font-size:11px;color:var(--stone);font-style:italic">no data</div>`
-            : isHitZero
-              ? `<div style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:linear-gradient(135deg,#fef9c4,#fde68a);border:1.5px solid #f0c860;border-radius:100px;font-size:10px;font-weight:700;letter-spacing:1px;color:#7a5f1a">✨ HIT ZERO</div>`
-              : `<div style="font-family:'DM Serif Display',serif;font-size:20px;font-style:italic;color:#b33a2d;font-weight:600;line-height:1">−${stuntDed.toFixed(2)}</div>`}
-        </div>`;
-      if(issueCells.length){
-        html+=`<div style="display:flex;flex-direction:column;gap:5px">`;
-        issueCells.forEach(sc=>{
-          if(sc.cell.status==="not_hit"){
-            const ded=ppFoCellTotalDeduction(sc.cell);
-            const labels=(sc.cell.deductions||[]).map(id=>ppDeductLabel(id)).join(", ");
-            html+=`<div style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:linear-gradient(135deg,#fff4f2,#ffe7e3);border:1px solid #e8b8b0;border-radius:8px;font-size:12px"><span style="font-family:'DM Serif Display',serif;font-style:italic;color:var(--pink);min-width:60px;text-transform:capitalize">${esc(sc.flyer)}</span><span style="flex:1;color:var(--ink-lt)">${esc(labels)}</span><span style="font-family:'DM Serif Display',serif;font-style:italic;color:#b33a2d;font-weight:600">−${ded.toFixed(2)}</span></div>`;
-          }else{
-            html+=`<div style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:#f4f3f1;border:1px solid #e0dfdc;border-radius:8px;font-size:12px"><span style="font-family:'DM Serif Display',serif;font-style:italic;color:var(--pink);min-width:60px;text-transform:capitalize">${esc(sc.flyer)}</span><span style="flex:1;color:var(--stone);font-weight:600;letter-spacing:.5px;font-size:11px">${esc(ppNoperfLabel(sc.cell.status))}</span></div>`;
-          }
-        });
-        html+=`</div>`;
-      }
-      html+=`</div>`;
-    });
-    html+=`</div></div>`;
-  });
-  container.innerHTML=html;
-}
-
-// Tumbling tab — flat list of all tumbling deductions across all fullouts.
-function renderPPFulloutTumblingContent(container){
-  const items=[];
-  Object.values(ppFoCache).forEach(fo=>{
-    (fo.tumbling||[]).forEach(t=>items.push({...t,fo}));
-  });
-  if(!items.length){
-    container.innerHTML=`<div style="text-align:center;padding:60px 20px;color:var(--stone);font-style:italic;font-size:14px">No tumbling deductions yet ✨</div>`;
-    return;
-  }
-  // Group by week (using the parent fullout's startedAt/date)
-  const sorted=items.sort((a,b)=>(b.fo.startedAt||(b.fo.date+"T12:00:00Z")).localeCompare(a.fo.startedAt||(a.fo.date+"T12:00:00Z")));
-  const groups={};
-  sorted.forEach(item=>{
-    const d=new Date(item.fo.startedAt||(item.fo.date+"T12:00:00Z"));
-    const monday=new Date(d);
-    monday.setDate(d.getDate()-((d.getDay()+6)%7));
-    monday.setHours(0,0,0,0);
-    const key=monday.toISOString().split("T")[0];
-    if(!groups[key])groups[key]={monday:monday.toISOString(),items:[]};
-    groups[key].items.push(item);
-  });
-  const sortedGroups=Object.values(groups).sort((a,b)=>b.monday.localeCompare(a.monday));
-  let html="";
-  sortedGroups.forEach(g=>{
-    const weekTotal=Math.round(g.items.reduce((s,i)=>s+(i.value||0.25),0)*100)/100;
-    html+=`<div style="margin-bottom:24px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:0 6px">
-        <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--stone)">${esc(ppFoWeekLabel(g.monday))}</div>
-        <div style="font-family:'DM Serif Display',serif;font-size:14px;font-style:italic;color:#b33a2d;font-weight:600">−${weekTotal.toFixed(2)}</div>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:6px">`;
-    g.items.forEach(item=>{
-      html+=`<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:white;border-radius:10px;box-shadow:0 1px 6px rgba(0,0,0,.04);cursor:pointer;-webkit-tap-highlight-color:rgba(196,85,154,.15)" data-pp-fo-action="open-fo" data-pp-fo-id="${esc(item.fo.id)}">
-        <div style="font-family:'DM Serif Display',serif;font-size:16px;font-style:italic;color:var(--pink);min-width:80px;text-transform:capitalize">${esc(item.name||"—")}</div>
-        <div style="flex:1;font-size:12.5px;color:var(--ink-lt);line-height:1.3">${esc(item.description||"")}</div>
-        <div style="font-size:10px;color:var(--stone)">${esc(ppFoFmtTime(item.fo))}</div>
-        <div style="font-family:'DM Serif Display',serif;font-size:16px;font-style:italic;color:#b33a2d;font-weight:600">−${(item.value||0.25).toFixed(2)}</div>
-      </div>`;
-    });
-    html+=`</div></div>`;
-  });
-  container.innerHTML=html;
-}
-
-// EDIT VIEW — the existing fullout grid editor, now per-id with back-to-tabs nav.
 function renderPPFulloutEdit(container){
   const team=getTeam("pink_panthers");
   const stunts=team.ppStunts||[];
@@ -3072,14 +2959,29 @@ function renderPPFulloutEdit(container){
   const flyers=ppAllFlyers();
   const totalDed=ppFoTotalDeduction(fo);
 
+  // Today's fullouts (oldest → newest, so they read left to right chronologically)
+  const today=new Date().toISOString().split("T")[0];
+  const todayFos=Object.values(ppFoCache).filter(f=>f.date===today)
+    .sort((a,b)=>(a.startedAt||"").localeCompare(b.startedAt||""));
+
   let html=`<div style="flex:1;overflow-y:auto;padding:18px 16px 60px;background:linear-gradient(135deg,#fff0f8,#f8f0ff);box-sizing:border-box" class="pp-bigscreen-scope" id="pp-fullout-wrap">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-      <button type="button" data-pp-fo-action="back-tabs" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--stone);padding:0">&#8592;</button>
+      <button type="button" data-pp-fo-action="back-home" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--stone);padding:0">&#8592;</button>
       <div style="flex:1;min-width:0">
         <div style="font-family:'Bagel Fat One','DM Serif Display',sans-serif;font-size:26px;line-height:1;color:var(--ink)">Fullout</div>
         <div style="font-size:10px;color:var(--stone);letter-spacing:1.5px;text-transform:uppercase;margin-top:3px">${esc(ppFoFmtTime(fo))}</div>
       </div>
     </div>
+    ${todayFos.length>0?`
+    <!-- Today's fullouts pill selector — quick switch + start a new one -->
+    <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:14px;-webkit-overflow-scrolling:touch">
+      ${todayFos.map((f,i)=>{
+        const active=f.id===ppFoCurId;
+        const ded=ppFoTotalDeduction(f);
+        return `<button type="button" data-pp-fo-action="switch-fo" data-pp-fo-id="${esc(f.id)}" style="flex-shrink:0;padding:7px 14px;border:1.5px solid ${active?"#c4559a":"var(--border)"};background:${active?"linear-gradient(135deg,#e91e8c,#c4559a)":"white"};color:${active?"white":"var(--stone)"};border-radius:100px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;-webkit-tap-highlight-color:rgba(196,85,154,.15);touch-action:manipulation;display:flex;align-items:center;gap:5px"><span>#${i+1}</span><span style="opacity:.75">${ded>0?"−"+ded.toFixed(2):"0.00"}</span></button>`;
+      }).join("")}
+      <button type="button" data-pp-fo-action="new-fullout" style="flex-shrink:0;padding:7px 14px;border:1.5px dashed #c4559a;background:white;color:#c4559a;border-radius:100px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;cursor:pointer;-webkit-tap-highlight-color:rgba(196,85,154,.15);touch-action:manipulation">+ new</button>
+    </div>`:""}
     <div style="background:white;border-radius:14px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 12px rgba(0,0,0,.05)">
       <div style="font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--stone)">total deductions</div>
       <div style="font-family:'DM Serif Display',serif;font-size:34px;font-style:italic;color:${totalDed>0?"#b33a2d":"var(--stone)"};line-height:1">${totalDed>0?"−"+totalDed.toFixed(2):"0.00"}</div>
@@ -3154,8 +3056,9 @@ function renderPPFulloutEdit(container){
       const action=btn.getAttribute("data-pp-fo-action");
       const flyer=btn.getAttribute("data-pp-fo-flyer");
       const stunt=btn.getAttribute("data-pp-fo-stunt");
-      // Back from edit goes to the tabs view, not all the way to PP home.
-      if(action==="back-tabs"){ ppSound("tap"); ppFoCurId=null; renderTeamTab(); }
+      if(action==="back-home"){ ppSound("tap"); curTeamTab="pp_home"; ppFoCurId=null; renderTeamTab(); }
+      else if(action==="switch-fo"){ ppSound("tap"); ppFoCurId=btn.getAttribute("data-pp-fo-id"); renderTeamTab(); }
+      else if(action==="new-fullout"){ ppSound("tap"); ppFoNewFullout(); }
       else if(action==="hit") ppFoOnHit(flyer,stunt);
       else if(action==="miss") ppFoOnMiss(flyer,stunt);
       else if(action==="clear") ppFoClearCell(flyer,stunt);
