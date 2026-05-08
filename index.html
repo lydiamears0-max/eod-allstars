@@ -497,9 +497,18 @@ function parseTimerInput(val){const parts=val.split(":");if(parts.length===2){re
 document.addEventListener("click",e=>{if(activeDedDD&&!activeDedDD.contains(e.target)){const m=activeDedDD.querySelector(".ded-menu");if(m)m.style.display="none";activeDedDD=null;}});
 
 // ── ALARM SOUND ──
-function playAlarm(){
+function ensureAudio(){
   try{
     if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state==="suspended")audioCtx.resume();
+  }catch(e){}
+}
+// Unlock audio on first user interaction (required for iPad/desktop)
+document.addEventListener("pointerdown",ensureAudio,{once:false,passive:true});
+
+function playAlarm(){
+  try{
+    ensureAudio();if(!audioCtx)return;
     [0,300,600].forEach(delay=>{
       const osc=audioCtx.createOscillator();const gain=audioCtx.createGain();
       osc.connect(gain);gain.connect(audioCtx.destination);
@@ -628,7 +637,7 @@ function openTeam(teamId){
 }
 function goBackToTeam(){stopSectionTimer();showScreen("team-view");renderTeamTab();}
 function teamTab(tab,btn){curTeamTab=tab;document.querySelectorAll(".team-nav-btn").forEach(b=>b.classList.remove("active"));if(btn)btn.classList.add("active");renderTeamTab();}
-function renderTeamTab(){const c=document.getElementById("team-content");if(!c)return;if(curTeamTab==="fullouts")renderFoView(c);else if(curTeamTab==="plans")renderPlansView(c);else if(curTeamTab==="analytics")renderTeamAnalytics(c);else if(curTeamTab==="checklist")renderChecklistView(c);else if(curTeamTab==="coord")renderCoordView(c);else if(curTeamTab==="pp_stunts")renderPPStunts(c);else if(curTeamTab==="pp_groups")renderPPGroups(c);else if(curTeamTab==="pp_session")renderPPSession(c);}
+function renderTeamTab(){const c=document.getElementById("team-content");if(!c)return;if(curTeamTab==="fullouts")renderFoView(c);else if(curTeamTab==="plans")renderPlansView(c);else if(curTeamTab==="analytics")renderTeamAnalytics(c);else if(curTeamTab==="checklist")renderChecklistView(c);else if(curTeamTab==="coord")renderCoordView(c);else if(curTeamTab==="pp_stunts")renderPPStunts(c);else if(curTeamTab==="pp_groups")renderPPGroups(c);else if(curTeamTab==="pp_session")renderPPSession(c);else if(curTeamTab==="pp_team_stats")renderPPTeamStats(c);}
 
 // ── FULLOUT VIEW ──
 function renderFoView(container){
@@ -1204,10 +1213,14 @@ function ppNotesCache(){return window._ppNotes||{};}
 
 function startPPListener(){
   if(ppListener)return;
-  ppCol().orderBy("date","desc").limit(60).onSnapshot(snap=>{
+  ppListener=ppCol().orderBy("date","desc").limit(200).onSnapshot(snap=>{
     ppCache={};
     snap.docs.forEach(d=>{const s=d.data();const key=s.stuntId+"_"+s.groupId;if(!ppCache[key])ppCache[key]=[];ppCache[key].push(s);});
-    if(curTeamTab==="pp_stunts"||curTeamTab==="pp_groups")renderTeamTab();
+    // Only re-render the team stats screen (which shows aggregate data and benefits from live updates).
+    // pp_stunts and pp_groups screens DO NOT auto re-render: rebuilding their HTML mid-tap was destroying
+    // buttons before the click event could fire on iPad/desktop, causing the random "tap does nothing" bug.
+    // They'll refresh whenever the user navigates back to them.
+    if(curTeamTab==="pp_team_stats")renderTeamTab();
   });
   ppNotesCol().onSnapshot(snap=>{
     window._ppNotes={};snap.docs.forEach(d=>{window._ppNotes[d.id]=d.data();});
@@ -1220,8 +1233,7 @@ function renderPPStunts(container){
   const team=getTeam("pink_panthers");
   const stunts=team.ppStunts||[];
   const icons=["★","✦","✶","◆"];
-  // Use buttons for reliable tap on iOS
-  let html=`<div style="width:100%;height:100%;overflow-y:auto;padding:24px;background:linear-gradient(135deg,#fff0f8,#f8f0ff);box-sizing:border-box">
+  let html=`<div style="width:100%;height:100%;overflow-y:auto;padding:24px;background:linear-gradient(135deg,#fff0f8,#f8f0ff);box-sizing:border-box" id="pp-home-wrap">
     <div style="font-family:'DM Serif Display',serif;font-size:28px;font-style:italic;text-align:center;color:var(--ink);margin-bottom:4px">Pink Panthers</div>
     <div style="text-align:center;font-size:12px;color:var(--stone);margin-bottom:24px;letter-spacing:1px;text-transform:uppercase">select a stunt to track</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:600px;margin:0 auto">`;
@@ -1230,15 +1242,35 @@ function renderPPStunts(container){
     const totalHits=sessions.reduce((a,x)=>a+(x.hits||0),0);
     const totalAtts=sessions.reduce((a,x)=>a+(x.attempts||0),0);
     const pct=totalAtts>0?Math.round((totalHits/totalAtts)*100):null;
-    html+=`<button onclick="selectPPStunt('${s.id}')" style="background:white;border:2px solid var(--border);border-radius:16px;padding:24px 20px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;transition:all .2s;width:100%;font-family:'DM Sans',sans-serif;-webkit-tap-highlight-color:rgba(196,85,154,.2)">
-      <div style="font-family:'DM Serif Display',serif;font-size:32px;font-style:italic;color:var(--pink);line-height:1">${icons[i]||"★"}</div>
-      <div style="font-size:16px;font-weight:700;color:var(--ink)">${esc(s.label)}</div>
-      <div style="font-size:11px;color:var(--stone);line-height:1.4">${esc(s.desc)}</div>
-      ${pct!==null?`<div style="margin-top:4px;font-size:11px;font-weight:700;color:${pctCol(pct)}">${pct}% overall</div>`:""}
+    html+=`<button type="button" data-pp-action="select-stunt" data-pp-stunt-id="${esc(s.id)}" style="background:white;border:2px solid var(--border);border-radius:16px;padding:24px 20px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;transition:all .2s;width:100%;font-family:'DM Sans',sans-serif;-webkit-tap-highlight-color:rgba(196,85,154,.2);touch-action:manipulation">
+      <div style="font-family:'DM Serif Display',serif;font-size:32px;font-style:italic;color:var(--pink);line-height:1;pointer-events:none">${icons[i]||"★"}</div>
+      <div style="font-size:16px;font-weight:700;color:var(--ink);pointer-events:none">${esc(s.label)}</div>
+      <div style="font-size:11px;color:var(--stone);line-height:1.4;pointer-events:none">${esc(s.desc)}</div>
+      ${pct!==null?`<div style="margin-top:4px;font-size:11px;font-weight:700;color:${pctCol(pct)};pointer-events:none">${pct}% overall</div>`:""}
     </button>`;
   });
+  // Team Stats tile (full-width, bottom of grid)
+  html+=`<button type="button" data-pp-action="open-team-stats" style="grid-column:1 / -1;background:linear-gradient(135deg,#1a1a1a,#2d1a2d);border:2px solid #2d1a2d;border-radius:16px;padding:22px 20px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:14px;text-align:center;transition:all .2s;width:100%;font-family:'DM Sans',sans-serif;-webkit-tap-highlight-color:rgba(196,85,154,.2);touch-action:manipulation">
+    <div style="font-family:'DM Serif Display',serif;font-size:28px;font-style:italic;color:var(--pink);line-height:1;pointer-events:none">♛</div>
+    <div style="display:flex;flex-direction:column;gap:2px;align-items:flex-start;pointer-events:none">
+      <div style="font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#888">whole team</div>
+      <div style="font-size:18px;font-weight:700;color:white">Team Stats</div>
+    </div>
+  </button>`;
   html+=`</div></div>`;
   container.innerHTML=html;
+  // Event delegation — survives any future re-renders so taps can never be lost mid-render
+  const wrap=document.getElementById("pp-home-wrap");
+  if(wrap&&!wrap._ppDelegated){
+    wrap._ppDelegated=true;
+    wrap.addEventListener("click",e=>{
+      const btn=e.target.closest("[data-pp-action]");
+      if(!btn)return;
+      const action=btn.getAttribute("data-pp-action");
+      if(action==="select-stunt")selectPPStunt(btn.getAttribute("data-pp-stunt-id"));
+      else if(action==="open-team-stats"){curTeamTab="pp_team_stats";renderTeamTab();}
+    });
+  }
 }
 
 function selectPPStunt(stuntId){ppCurStunt=stuntId;curTeamTab="pp_groups";renderTeamTab();}
@@ -1248,8 +1280,8 @@ function renderPPGroups(container){
   const stunt=(team.ppStunts||[]).find(s=>s.id===ppCurStunt);
   if(!stunt){renderPPStunts(container);return;}
   if(!stunt.groups||!stunt.groups.length){container.innerHTML=`<div style="padding:40px;text-align:center;color:var(--stone);font-style:italic">No groups set up yet for ${esc(stunt.label)}</div>`;return;}
-  let html=`<div style="flex:1;overflow-y:auto;padding:24px;background:linear-gradient(135deg,#fff0f8,#f8f0ff)">
-    <button onclick="curTeamTab='pp_stunts';renderTeamTab()" style="background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--stone);margin-bottom:16px;padding:0">&#8592; back</button>
+  let html=`<div style="flex:1;overflow-y:auto;padding:24px;background:linear-gradient(135deg,#fff0f8,#f8f0ff)" id="pp-groups-wrap">
+    <button type="button" data-pp-action="back-to-stunts" style="background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--stone);margin-bottom:16px;padding:0">&#8592; back</button>
     <div style="font-family:'DM Serif Display',serif;font-size:24px;font-style:italic;text-align:center;margin-bottom:4px">${esc(stunt.label)}</div>
     <div style="text-align:center;font-size:11px;color:var(--stone);margin-bottom:24px">${esc(stunt.desc)}</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:14px;max-width:700px;margin:0 auto">`;
@@ -1258,16 +1290,26 @@ function renderPPGroups(container){
     const last=sessions[0];
     const pct=last&&last.attempts>0?Math.round((last.hits/last.attempts)*100):null;
     const trend=calcTrend(sessions);
-    html+=`<button onclick="selectPPGroup('${g.id}')" style="background:white;border:2px solid var(--border);border-radius:14px;padding:20px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;transition:all .2s;font-family:'DM Sans',sans-serif;width:100%;-webkit-tap-highlight-color:rgba(196,85,154,.2)">
-      <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#e91e8c,#9b59b6);display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:28px;font-style:italic;color:white">${g.name[0]}</div>
-      <div style="font-size:15px;font-weight:700;color:var(--ink)">${esc(g.name)}'s group</div>
-      ${pct!==null?`<div style="font-size:13px;font-weight:700;color:${pctCol(pct)}">${pct}% last session</div>`:""}
-      ${trend?`<div style="font-size:13px" class="${trend.cls}">${trend.arrow}</div>`:""}
+    html+=`<button type="button" data-pp-action="select-group" data-pp-group-id="${esc(g.id)}" style="background:white;border:2px solid var(--border);border-radius:14px;padding:20px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;transition:all .2s;font-family:'DM Sans',sans-serif;width:100%;-webkit-tap-highlight-color:rgba(196,85,154,.2);touch-action:manipulation">
+      <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#e91e8c,#9b59b6);display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:28px;font-style:italic;color:white;pointer-events:none">${esc(g.name[0])}</div>
+      <div style="font-size:15px;font-weight:700;color:var(--ink);pointer-events:none">${esc(g.name)}'s group</div>
+      ${pct!==null?`<div style="font-size:13px;font-weight:700;color:${pctCol(pct)};pointer-events:none">${pct}% last session</div>`:""}
+      ${trend?`<div style="font-size:13px;pointer-events:none" class="${trend.cls}">${trend.arrow}</div>`:""}
     </button>`;
   });
   html+=`</div></div>`;
   container.innerHTML=html;
-
+  const wrap=document.getElementById("pp-groups-wrap");
+  if(wrap&&!wrap._ppDelegated){
+    wrap._ppDelegated=true;
+    wrap.addEventListener("click",e=>{
+      const btn=e.target.closest("[data-pp-action]");
+      if(!btn)return;
+      const action=btn.getAttribute("data-pp-action");
+      if(action==="back-to-stunts"){curTeamTab="pp_stunts";renderTeamTab();}
+      else if(action==="select-group")selectPPGroup(btn.getAttribute("data-pp-group-id"));
+    });
+  }
 }
 
 function calcTrend(sessions){
@@ -1280,7 +1322,7 @@ function calcTrend(sessions){
   return{arrow:"→ steady",cls:"trend-flat"};
 }
 
-function selectPPGroup(groupId){ppCurGroup=groupId;ppSessionData={attempts:0,hits:0};curTeamTab="pp_session";renderTeamTab();}
+function selectPPGroup(groupId){ppCurGroup=groupId;ppSessionData={attempts:0,hits:0,isFullout:false,celebrated:false};curTeamTab="pp_session";renderTeamTab();}
 
 function renderPPSession(container){
   const team=getTeam("pink_panthers");
@@ -1328,6 +1370,15 @@ function renderPPSession(container){
       </div>
     </div>
 
+    <!-- FULLOUT TOGGLE -->
+    <div style="background:white;border-radius:12px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 12px rgba(0,0,0,.06);cursor:pointer" onclick="ppToggleFullout()">
+      <div id="pp-fullout-chk" style="width:22px;height:22px;border:2px solid var(--border);border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:${ppSessionData.isFullout?"var(--pink)":"transparent"};border-color:${ppSessionData.isFullout?"var(--pink)":"var(--border)"};transition:all .15s">${ppSessionData.isFullout?'<span style="color:white;font-size:14px;font-weight:700;line-height:1">✓</span>':""}</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:700;color:var(--ink)">Mark as fullout 💪</div>
+        <div style="font-size:11px;color:var(--stone)">Tag this session so it shows under the Fullout filter</div>
+      </div>
+    </div>
+
     <!-- SAVE SESSION -->
     <button onclick="savePPSession()" style="width:100%;padding:14px;background:linear-gradient(135deg,#e91e8c,#9b59b6);color:white;border:none;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:16px;letter-spacing:.5px">save session ✓</button>
 
@@ -1361,17 +1412,26 @@ function renderPPSession(container){
 }
 
 function ppHit(){
+  ensureAudio(); // unlock audio context now (we're inside a user gesture)
   ppSessionData.hits=(ppSessionData.hits||0)+1;
   ppSessionData.attempts=Math.max(ppSessionData.attempts||0,ppSessionData.hits);
   updatePPDisplay();
-  if(ppSessionData.attempts>=3&&ppSessionData.hits===ppSessionData.attempts){
-    setTimeout(launchConfetti,100);
+  // Fire celebration the moment we cross into 100% (not on every hit while staying at 100%).
+  // Re-arms when ppSessionData.celebrated gets reset by ppAdjust dropping below 100%.
+  const at100=ppSessionData.attempts>0&&ppSessionData.hits===ppSessionData.attempts;
+  if(at100&&!ppSessionData.celebrated){
+    ppSessionData.celebrated=true;
+    launchConfetti();
   }
 }
 
 function ppAdjust(field,delta){
+  ensureAudio();
   ppSessionData[field]=Math.max(0,(ppSessionData[field]||0)+delta);
   if(ppSessionData.hits>ppSessionData.attempts)ppSessionData.hits=ppSessionData.attempts;
+  // If the user adjusts and we're no longer at 100%, re-arm the celebration so it can fire again next time.
+  const at100=ppSessionData.attempts>0&&ppSessionData.hits===ppSessionData.attempts;
+  if(!at100)ppSessionData.celebrated=false;
   updatePPDisplay();
 }
 
@@ -1393,18 +1453,19 @@ function updatePPDisplay(){
 
 function launchConfetti(){
   const colors=["#e91e8c","#9b59b6","#f1c40f","#2ecc71","#3498db","#e74c3c","#ff9800"];
-  playAlarm(); // reuse alarm for celebration sound
-  // Play a fun sound
+  // Play a fun ascending sound (audio context unlocked via ensureAudio)
   try{
-    if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();
-    [0,100,200,300,400].forEach((delay,i)=>{
-      const osc=audioCtx.createOscillator();const gain=audioCtx.createGain();
-      osc.connect(gain);gain.connect(audioCtx.destination);
-      osc.frequency.value=[523,659,784,1047,1319][i];osc.type="sine";
-      gain.gain.setValueAtTime(0.3,audioCtx.currentTime+delay/1000);
-      gain.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+delay/1000+0.3);
-      osc.start(audioCtx.currentTime+delay/1000);osc.stop(audioCtx.currentTime+delay/1000+0.3);
-    });
+    ensureAudio();
+    if(audioCtx){
+      [0,100,200,300,400].forEach((delay,i)=>{
+        const osc=audioCtx.createOscillator();const gain=audioCtx.createGain();
+        osc.connect(gain);gain.connect(audioCtx.destination);
+        osc.frequency.value=[523,659,784,1047,1319][i];osc.type="sine";
+        gain.gain.setValueAtTime(0.3,audioCtx.currentTime+delay/1000);
+        gain.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+delay/1000+0.3);
+        osc.start(audioCtx.currentTime+delay/1000);osc.stop(audioCtx.currentTime+delay/1000+0.3);
+      });
+    }
   }catch(e){}
   for(let i=0;i<80;i++){
     const el=document.createElement("div");
@@ -1417,9 +1478,9 @@ function launchConfetti(){
 
 async function savePPSession(){
   if(!ppSessionData.attempts){alert("Add some attempts first!");return;}
-  const session={id:uid(),stuntId:ppCurStunt,groupId:ppCurGroup,date:new Date().toISOString().split("T")[0],attempts:ppSessionData.attempts,hits:ppSessionData.hits,updated_at:new Date().toISOString()};
+  const session={id:uid(),stuntId:ppCurStunt,groupId:ppCurGroup,date:new Date().toISOString().split("T")[0],attempts:ppSessionData.attempts,hits:ppSessionData.hits,isFullout:!!ppSessionData.isFullout,updated_at:new Date().toISOString()};
   await ppCol().doc(session.id).set(session);
-  if(ppSessionData.hits===ppSessionData.attempts&&ppSessionData.attempts>=3)launchConfetti();
+  // Note: confetti already fires from ppHit() when 100% is reached, so we don't fire it again here.
   ppSessionData={attempts:0,hits:0};
   renderTeamTab();
 }
@@ -1437,6 +1498,136 @@ async function togglePPNote(noteKey,idx){
   const notes=ppNotesCache()[noteKey]||{items:[]};
   if(notes.items[idx])notes.items[idx].done=true;
   await ppNotesCol().doc(noteKey).set(notes);
+}
+
+function ppToggleFullout(){
+  ppSessionData.isFullout=!ppSessionData.isFullout;
+  const chk=document.getElementById("pp-fullout-chk");
+  if(chk){
+    chk.style.background=ppSessionData.isFullout?"var(--pink)":"transparent";
+    chk.style.borderColor=ppSessionData.isFullout?"var(--pink)":"var(--border)";
+    chk.innerHTML=ppSessionData.isFullout?'<span style="color:white;font-size:14px;font-weight:700;line-height:1">✓</span>':"";
+  }
+}
+
+// ── PINK PANTHERS TEAM STATS ──
+let ppStatsFilter="today"; // today | week | total | fullout
+
+function ppFilterSessions(sessions,filter){
+  if(!sessions||!sessions.length)return[];
+  const today=new Date().toISOString().split("T")[0];
+  if(filter==="today")return sessions.filter(s=>s.date===today);
+  if(filter==="week"){
+    const d=new Date();d.setDate(d.getDate()-7);
+    const cutoff=d.toISOString().split("T")[0];
+    return sessions.filter(s=>s.date>=cutoff);
+  }
+  if(filter==="fullout")return sessions.filter(s=>s.isFullout);
+  return sessions; // total
+}
+
+// Determine which group(s) get the crown for a given stunt.
+// Rule: highest hit %; tie-break by most attempts that hit (i.e. raw hits); if still tied, all winners get crowns.
+// Groups with 0 attempts in the period are excluded from crown contention.
+function ppCrownWinners(rows){
+  const eligible=rows.filter(r=>r.atts>0);
+  if(!eligible.length)return new Set();
+  const maxPct=Math.max(...eligible.map(r=>r.pct));
+  const topByPct=eligible.filter(r=>r.pct===maxPct);
+  const maxHits=Math.max(...topByPct.map(r=>r.hits));
+  const winners=topByPct.filter(r=>r.hits===maxHits);
+  return new Set(winners.map(r=>r.groupId));
+}
+
+function renderPPTeamStats(container){
+  startPPListener();
+  const team=getTeam("pink_panthers");
+  const stunts=team.ppStunts||[];
+  const filter=ppStatsFilter;
+  const filterLabels={today:"Today",week:"This Week",total:"All Time",fullout:"Fullouts"};
+
+  let html=`<div style="flex:1;overflow-y:auto;padding:20px 18px 60px;background:linear-gradient(135deg,#fff0f8,#f8f0ff);box-sizing:border-box" id="pp-stats-wrap">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <button type="button" data-pp-action="back-to-stunts" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--stone);padding:0">&#8592;</button>
+      <div>
+        <div style="font-family:'DM Serif Display',serif;font-size:22px;font-style:italic;line-height:1.1">Team Stats</div>
+        <div style="font-size:10px;color:var(--stone);letter-spacing:1.5px;text-transform:uppercase;margin-top:2px">${esc(filterLabels[filter])}</div>
+      </div>
+    </div>
+
+    <!-- FILTER PILLS -->
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px">`;
+  ["today","week","total","fullout"].forEach(f=>{
+    const active=f===filter;
+    const labels={today:"Today",week:"Week",total:"Total",fullout:"Fullout"};
+    html+=`<button type="button" data-pp-action="set-filter" data-pp-filter="${f}" style="padding:9px 22px;border:none;border-radius:100px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;letter-spacing:.5px;cursor:pointer;-webkit-tap-highlight-color:rgba(196,85,154,.2);touch-action:manipulation;transition:all .15s;${active?"background:linear-gradient(135deg,#e91e8c,#c4559a);color:white;box-shadow:0 4px 14px rgba(196,85,154,.4)":"background:white;color:var(--stone);border:1.5px solid var(--border)"}">${labels[f]}</button>`;
+  });
+  html+=`</div>
+
+    <!-- 4 STUNT CARDS GRID -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:16px;max-width:1100px;margin:0 auto">`;
+
+  stunts.forEach(stunt=>{
+    // Build rows for this stunt
+    const rows=(stunt.groups||[]).map(g=>{
+      const sessions=ppCache[stunt.id+"_"+g.id]||[];
+      const filtered=ppFilterSessions(sessions,filter);
+      const atts=filtered.reduce((a,s)=>a+(s.attempts||0),0);
+      const hits=filtered.reduce((a,s)=>a+(s.hits||0),0);
+      const pct=atts>0?Math.round((hits/atts)*100):null;
+      return{groupId:g.id,name:g.name,atts,hits,pct};
+    });
+    const crowned=ppCrownWinners(rows);
+    const hasGroups=(stunt.groups||[]).length>0;
+
+    html+=`<div style="background:white;border-radius:14px;overflow:hidden;box-shadow:0 2px 14px rgba(0,0,0,.06);display:flex;flex-direction:column">
+      <!-- card header -->
+      <div style="background:var(--ink);color:#f0efed;padding:9px 14px;display:flex;justify-content:space-between;align-items:center">
+        <div style="font-family:'DM Serif Display',serif;font-size:14px;font-style:italic;color:#e8e8e6">${esc(stunt.label)}</div>
+        <div style="font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--pink)">${esc(stunt.desc).slice(0,32)}${stunt.desc.length>32?"…":""}</div>
+      </div>`;
+
+    if(!hasGroups){
+      html+=`<div style="padding:24px;text-align:center;color:var(--stone);font-style:italic;font-size:12px">No groups yet ✨</div>`;
+    }else{
+      // table header
+      html+=`<div style="display:grid;grid-template-columns:1.4fr 50px 50px 1.2fr 56px;padding:7px 14px;background:var(--panel);border-bottom:1px solid var(--border);font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--stone)">
+        <span>Group</span><span style="text-align:center">Att.</span><span style="text-align:center">Hits</span><span>Rate</span><span style="text-align:right">%</span>
+      </div>`;
+      // rows
+      rows.forEach(r=>{
+        const isCrowned=crowned.has(r.groupId);
+        const hasData=r.atts>0;
+        const barColor=hasData?pctCol(r.pct):"var(--border)";
+        const barWidth=hasData?r.pct:0;
+        html+=`<div style="display:grid;grid-template-columns:1.4fr 50px 50px 1.2fr 56px;align-items:center;padding:9px 14px;border-bottom:1px solid var(--border);font-size:12px">
+          <span style="color:var(--ink);display:flex;align-items:center;gap:5px">
+            ${esc(r.name)}'s group${isCrowned?' <span style="font-size:14px" title="Top group">👑</span>':""}
+          </span>
+          <span style="text-align:center;color:${hasData?"var(--ink)":"var(--stone)"};font-weight:${hasData?"600":"400"}">${hasData?r.atts:"–"}</span>
+          <span style="text-align:center;color:${hasData?"var(--ink)":"var(--stone)"};font-weight:${hasData?"600":"400"}">${hasData?r.hits:"–"}</span>
+          <div style="background:var(--border);border-radius:100px;height:6px;overflow:hidden;margin:0 4px"><div style="height:100%;width:${barWidth}%;background:${barColor};border-radius:100px;transition:width .4s"></div></div>
+          <span style="text-align:right;font-weight:700;color:${hasData?barColor:"var(--stone)"};font-size:11px">${hasData?r.pct+"%":"–"}</span>
+        </div>`;
+      });
+    }
+    html+=`</div>`;
+  });
+
+  html+=`</div></div>`;
+  container.innerHTML=html;
+
+  const wrap=document.getElementById("pp-stats-wrap");
+  if(wrap&&!wrap._ppDelegated){
+    wrap._ppDelegated=true;
+    wrap.addEventListener("click",e=>{
+      const btn=e.target.closest("[data-pp-action]");
+      if(!btn)return;
+      const action=btn.getAttribute("data-pp-action");
+      if(action==="back-to-stunts"){curTeamTab="pp_stunts";renderTeamTab();}
+      else if(action==="set-filter"){ppStatsFilter=btn.getAttribute("data-pp-filter");renderTeamTab();}
+    });
+  }
 }
 
 // ── CHECKLIST ──
