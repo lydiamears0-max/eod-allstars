@@ -1207,7 +1207,7 @@ function startPPListener(){
   ppCol().orderBy("date","desc").limit(60).onSnapshot(snap=>{
     ppCache={};
     snap.docs.forEach(d=>{const s=d.data();const key=s.stuntId+"_"+s.groupId;if(!ppCache[key])ppCache[key]=[];ppCache[key].push(s);});
-    if(curTeamTab==="pp_stunts"||curTeamTab==="pp_groups"||curTeamTab==="pp_session")renderTeamTab();
+    if(curTeamTab==="pp_stunts"||curTeamTab==="pp_groups")renderTeamTab();
   });
   ppNotesCol().onSnapshot(snap=>{
     window._ppNotes={};snap.docs.forEach(d=>{window._ppNotes[d.id]=d.data();});
@@ -1304,15 +1304,15 @@ function renderPPSession(container){
 
     <!-- HIT RATE -->
     <div style="background:white;border-radius:16px;padding:20px;margin-bottom:16px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,.06)">
-      <div class="pp-hit-rate" style="color:${pctColor}">${pct!==null?pct+"%":"--"}</div>
-      <div style="font-size:12px;color:var(--stone);margin-top:4px">${hits} hits / ${atts} attempts</div>
+      <div class="pp-hit-rate" id="pp-rate" style="color:${pctColor}">${pct!==null?pct+"%":"--"}</div>
+      <div style="font-size:12px;color:var(--stone);margin-top:4px" id="pp-rate-sub">${hits} hits / ${atts} attempts</div>
     </div>
 
     <!-- COUNTERS -->
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
       <div style="background:white;border-radius:16px;padding:16px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,.06)">
         <div style="font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--stone);margin-bottom:10px">attempts</div>
-        <div style="font-size:40px;font-weight:700;color:var(--ink);margin-bottom:10px">${atts}</div>
+        <div style="font-size:40px;font-weight:700;color:var(--ink);margin-bottom:10px" id="pp-atts-num">${atts}</div>
         <div style="display:flex;justify-content:center;gap:10px">
           <button class="pp-counter-btn" style="background:#f0efed;color:var(--stone)" onclick="ppAdjust('attempts',-1)">−</button>
           <button class="pp-counter-btn" style="background:var(--ink);color:white" onclick="ppAdjust('attempts',1)">+</button>
@@ -1320,7 +1320,7 @@ function renderPPSession(container){
       </div>
       <div style="background:white;border-radius:16px;padding:16px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,.06)">
         <div style="font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--stone);margin-bottom:10px">hits 🎯</div>
-        <div style="font-size:40px;font-weight:700;color:var(--pink);margin-bottom:10px">${hits}</div>
+        <div style="font-size:40px;font-weight:700;color:var(--pink);margin-bottom:10px" id="pp-hits-num">${hits}</div>
         <div style="display:flex;justify-content:center;gap:10px">
           <button class="pp-counter-btn" style="background:#fce4f3;color:var(--pink)" onclick="ppAdjust('hits',-1)">−</button>
           <button class="pp-counter-btn" style="background:var(--pink);color:white" onclick="ppHit()">HIT! 🎉</button>
@@ -1360,21 +1360,35 @@ function renderPPSession(container){
   container.innerHTML=html;
 }
 
-function ppAdjust(field,delta){
-  ppSessionData[field]=Math.max(0,(ppSessionData[field]||0)+delta);
-  // cap hits at attempts
-  if(ppSessionData.hits>ppSessionData.attempts)ppSessionData.hits=ppSessionData.attempts;
-  renderTeamTab();
-}
-
 function ppHit(){
   ppSessionData.hits=(ppSessionData.hits||0)+1;
   ppSessionData.attempts=Math.max(ppSessionData.attempts||0,ppSessionData.hits);
-  renderTeamTab();
-  // Celebrate if 100% and at least 3 attempts
+  updatePPDisplay();
   if(ppSessionData.attempts>=3&&ppSessionData.hits===ppSessionData.attempts){
     setTimeout(launchConfetti,100);
   }
+}
+
+function ppAdjust(field,delta){
+  ppSessionData[field]=Math.max(0,(ppSessionData[field]||0)+delta);
+  if(ppSessionData.hits>ppSessionData.attempts)ppSessionData.hits=ppSessionData.attempts;
+  updatePPDisplay();
+}
+
+function updatePPDisplay(){
+  const atts=ppSessionData.attempts||0;
+  const hits=ppSessionData.hits||0;
+  const pct=atts>0?Math.round((hits/atts)*100):null;
+  const pctColor=pct!==null?pctCol(pct):"var(--stone)";
+  const rateEl=document.getElementById("pp-rate");
+  const subEl=document.getElementById("pp-rate-sub");
+  const attsEl=document.getElementById("pp-atts-num");
+  const hitsEl=document.getElementById("pp-hits-num");
+  if(rateEl)rateEl.textContent=pct!==null?pct+"%":"--";
+  if(rateEl)rateEl.style.color=pctColor;
+  if(subEl)subEl.textContent=hits+" hits / "+atts+" attempts";
+  if(attsEl)attsEl.textContent=atts;
+  if(hitsEl)hitsEl.textContent=hits;
 }
 
 function launchConfetti(){
