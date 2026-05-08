@@ -1277,7 +1277,6 @@ let ppFoPopup=null; // { flyer, stuntId, deductions:Set } when popup open
 
 // Deduction & non-performance options shown in the MISS popup
 const PP_DEDUCT_INFRACTIONS=[
-  {id:"athlete_fall",label:"Athlete Fall",value:0.25},
   {id:"building_bobble",label:"Building Bobble",value:0.40},
   {id:"building_fall",label:"Building Fall",value:0.75},
   {id:"major_building_fall",label:"Major Building Fall",value:1.25}
@@ -1765,9 +1764,10 @@ function ppFoCellTotalDeduction(cell){
 }
 
 function ppFoTotalDeduction(fo){
-  if(!fo||!fo.cells)return 0;
+  if(!fo)return 0;
   let total=0;
-  Object.values(fo.cells).forEach(c=>{total+=ppFoCellTotalDeduction(c);});
+  if(fo.cells)Object.values(fo.cells).forEach(c=>{total+=ppFoCellTotalDeduction(c);});
+  if(fo.tumbling)fo.tumbling.forEach(t=>{total+=(t.value||0.25);});
   return Math.round(total*100)/100;
 }
 
@@ -1795,7 +1795,7 @@ function ppFoOnMiss(flyer,stuntId){
   const fo=ppFoGetCurrent();
   const existing=fo.cells[ppFoCellKey(flyer,stuntId)];
   const preselected=(existing&&existing.status==="not_hit"&&existing.deductions)?existing.deductions:[];
-  ppFoPopup={flyer,stuntId,deductions:new Set(preselected)};
+  ppFoPopup={kind:"cell-deductions",flyer,stuntId,deductions:new Set(preselected)};
   ppFoRenderPopup();
 }
 
@@ -1806,10 +1806,32 @@ function ppFoClearCell(flyer,stuntId){
 function ppFoNewFullout(){
   if(!confirm("Start a new fullout? This clears all the cells for today."))return;
   const date=ppFoCurDate||new Date().toISOString().split("T")[0];
-  const fresh={date,cells:{},updated_at:new Date().toISOString()};
+  const fresh={date,cells:{},tumbling:[],updated_at:new Date().toISOString()};
   ppFoCache[date]=fresh;
   if(curTeamTab==="pp_fullout")renderTeamTab();
   ppFoCol().doc(date).set(fresh).catch(e=>console.error("Failed to reset fullout:",e));
+}
+
+async function ppFoAddTumbling(name,description){
+  const date=ppFoCurDate||new Date().toISOString().split("T")[0];
+  const cur=ppFoCache[date]||{date,cells:{},tumbling:[]};
+  if(!cur.tumbling)cur.tumbling=[];
+  cur.tumbling.push({id:uid(),name:name.trim(),description:description.trim(),value:0.25});
+  cur.updated_at=new Date().toISOString();
+  ppFoCache[date]=cur;
+  if(curTeamTab==="pp_fullout"&&!ppFoPopup)renderTeamTab();
+  try{await ppFoCol().doc(date).set(cur);}catch(e){console.error("Failed to save tumbling:",e);}
+}
+
+async function ppFoRemoveTumbling(tumblingId){
+  const date=ppFoCurDate||new Date().toISOString().split("T")[0];
+  const cur=ppFoCache[date];
+  if(!cur||!cur.tumbling)return;
+  cur.tumbling=cur.tumbling.filter(t=>t.id!==tumblingId);
+  cur.updated_at=new Date().toISOString();
+  ppFoCache[date]=cur;
+  if(curTeamTab==="pp_fullout"&&!ppFoPopup)renderTeamTab();
+  try{await ppFoCol().doc(date).set(cur);}catch(e){console.error("Failed to remove tumbling:",e);}
 }
 
 function renderPPFullout(container){
@@ -1833,14 +1855,8 @@ function renderPPFullout(container){
 
     <!-- TOTAL DEDUCTION SUMMARY -->
     <div style="background:white;border-radius:14px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 12px rgba(0,0,0,.05)">
-      <div>
-        <div style="font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--stone)">total deductions</div>
-        <div style="font-family:'DM Serif Display',serif;font-size:34px;font-style:italic;color:${totalDed>0?"#b33a2d":"var(--stone)"};line-height:1;margin-top:3px">${totalDed>0?"−"+totalDed.toFixed(2):"0.00"}</div>
-      </div>
-      <div style="text-align:right">
-        <div style="font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--stone)">score</div>
-        <div style="font-family:'DM Serif Display',serif;font-size:34px;font-style:italic;color:${totalDed>0?"var(--ink)":"#2d7a52"};line-height:1;margin-top:3px">${(10-totalDed).toFixed(2)}</div>
-      </div>
+      <div style="font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--stone)">total deductions</div>
+      <div style="font-family:'DM Serif Display',serif;font-size:34px;font-style:italic;color:${totalDed>0?"#b33a2d":"var(--stone)"};line-height:1">${totalDed>0?"−"+totalDed.toFixed(2):"0.00"}</div>
     </div>
 
     <!-- COLUMN HEADERS (sticky) -->
@@ -1890,7 +1906,27 @@ function renderPPFullout(container){
     });
     html+=`</div>`;
   });
-  html+=`</div>
+  // Tumbling deductions section (below the flyer grid)
+  const tumb=fo.tumbling||[];
+  const tumbTotal=tumb.reduce((a,t)=>a+(t.value||0.25),0);
+  html+=`
+    <div style="margin-top:24px;background:white;border-radius:14px;padding:16px 18px;box-shadow:0 2px 12px rgba(0,0,0,.05)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${tumb.length?"12px":"6px"}">
+        <div>
+          <div style="font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--stone)">tumbling deductions</div>
+          ${tumb.length?`<div style="font-family:'DM Serif Display',serif;font-size:20px;font-style:italic;color:#b33a2d;line-height:1;margin-top:4px">−${tumbTotal.toFixed(2)}</div>`:`<div style="font-size:11px;color:var(--stone);font-style:italic;margin-top:4px">no tumbling deductions yet</div>`}
+        </div>
+        <button type="button" data-pp-fo-action="add-tumbling" style="padding:8px 14px;background:linear-gradient(135deg,#e91e8c,#c4559a);border:none;border-radius:100px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;color:white;cursor:pointer;box-shadow:0 3px 10px rgba(196,85,154,.3);-webkit-tap-highlight-color:rgba(255,255,255,.2);touch-action:manipulation">+ add</button>
+      </div>
+      ${tumb.length?`<div style="display:flex;flex-direction:column;gap:6px">${tumb.map(t=>`
+        <div style="display:flex;align-items:center;gap:10px;padding:9px 11px;background:linear-gradient(135deg,#fff4f2,#ffe7e3);border:1px solid #e8b8b0;border-radius:9px">
+          <div style="font-family:'DM Serif Display',serif;font-size:16px;font-style:italic;color:var(--pink);min-width:80px">${esc(t.name||"—")}</div>
+          <div style="flex:1;font-size:12.5px;color:var(--ink-lt);line-height:1.3">${esc(t.description||"")}</div>
+          <div style="font-family:'DM Serif Display',serif;font-size:16px;font-style:italic;color:#b33a2d;font-weight:600">−${(t.value||0.25).toFixed(2)}</div>
+          <button type="button" data-pp-fo-action="remove-tumbling" data-pp-fo-tumbling-id="${esc(t.id)}" style="background:rgba(255,255,255,.7);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:var(--stone);line-height:1;-webkit-tap-highlight-color:transparent" title="Remove">✕</button>
+        </div>`).join("")}</div>`:""}
+    </div>
+  </div>
   <div id="pp-fo-popup-mount"></div>`;
   container.innerHTML=html;
 
@@ -1910,6 +1946,11 @@ function renderPPFullout(container){
       else if(action==="hit")ppFoOnHit(flyer,stunt);
       else if(action==="miss")ppFoOnMiss(flyer,stunt);
       else if(action==="clear")ppFoClearCell(flyer,stunt);
+      else if(action==="add-tumbling"){ppFoPopup={kind:"tumbling-add"};ppFoRenderPopup();}
+      else if(action==="remove-tumbling"){
+        const tid=btn.getAttribute("data-pp-fo-tumbling-id");
+        if(confirm("Remove this tumbling deduction?"))ppFoRemoveTumbling(tid);
+      }
     });
   }
 
@@ -1921,72 +1962,128 @@ function ppFoRenderPopup(){
   const mount=document.getElementById("pp-fo-popup-mount");
   if(!mount)return;
   if(!ppFoPopup){mount.innerHTML="";return;}
-  const{flyer,stuntId,deductions}=ppFoPopup;
-  const team=getTeam("pink_panthers");
-  const stunt=(team.ppStunts||[]).find(s=>s.id===stuntId);
-  const stuntLabel=stunt?stunt.label:stuntId;
-  const totalSelected=[...deductions].reduce((a,id)=>a+ppDeductValue(id),0);
 
-  const renderRow=(d)=>{
-    const sel=deductions.has(d.id);
-    return`<div class="pp-popup-row${sel?" selected":""}" data-pp-popup-action="toggle-deduct" data-pp-popup-id="${esc(d.id)}">
-      <div class="pp-popup-chk"></div>
-      <div class="pp-popup-row-lbl">${esc(d.label)}</div>
-      <div class="pp-popup-row-val">−${d.value.toFixed(2)}</div>
+  // Default kind is cell-deductions (for backward compat with anything that didn't set it)
+  const kind=ppFoPopup.kind||"cell-deductions";
+
+  if(kind==="cell-deductions"){
+    const{flyer,stuntId,deductions}=ppFoPopup;
+    const team=getTeam("pink_panthers");
+    const stunt=(team.ppStunts||[]).find(s=>s.id===stuntId);
+    const stuntLabel=stunt?stunt.label:stuntId;
+    const totalSelected=[...deductions].reduce((a,id)=>a+ppDeductValue(id),0);
+
+    const renderRow=(d)=>{
+      const sel=deductions.has(d.id);
+      return`<div class="pp-popup-row${sel?" selected":""}" data-pp-popup-action="toggle-deduct" data-pp-popup-id="${esc(d.id)}">
+        <div class="pp-popup-chk"></div>
+        <div class="pp-popup-row-lbl">${esc(d.label)}</div>
+        <div class="pp-popup-row-val">−${d.value.toFixed(2)}</div>
+      </div>`;
+    };
+
+    mount.innerHTML=`<div class="pp-popup-backdrop">
+      <div class="pp-popup">
+        <div class="pp-popup-hd">
+          <div class="pp-popup-title">${esc(flyer)} · ${esc(stuntLabel)}</div>
+          <div class="pp-popup-sub">SELECT DEDUCTIONS · MULTIPLE OK</div>
+        </div>
+        <div class="pp-popup-body">
+          <div class="pp-popup-section">
+            <div class="pp-popup-section-hd">Routine Infractions</div>
+            ${PP_DEDUCT_INFRACTIONS.map(renderRow).join("")}
+          </div>
+          <div class="pp-popup-section">
+            <div class="pp-popup-section-hd">Rule Violations</div>
+            ${PP_DEDUCT_VIOLATIONS.map(renderRow).join("")}
+          </div>
+          <div class="pp-popup-section-hd" style="padding:0 22px;margin-top:8px">Or — didn't perform</div>
+          <div class="pp-popup-noperf-grid">
+            ${PP_NOPERF_OPTIONS.map(o=>`<button type="button" class="pp-popup-noperf-btn" data-pp-popup-action="noperf" data-pp-popup-id="${esc(o.id)}"><div class="pp-popup-noperf-emoji">${o.emoji}</div>${esc(o.label)}</button>`).join("")}
+          </div>
+        </div>
+        <div class="pp-popup-foot">
+          <button type="button" class="pp-popup-btn-cancel" data-pp-popup-action="cancel">Cancel</button>
+          <button type="button" class="pp-popup-btn-save" data-pp-popup-action="save"${deductions.size===0?" disabled":""}>${deductions.size===0?"Pick deductions":"Save −"+totalSelected.toFixed(2)}</button>
+        </div>
+      </div>
     </div>`;
-  };
+  } else if(kind==="tumbling-add"){
+    mount.innerHTML=`<div class="pp-popup-backdrop">
+      <div class="pp-popup">
+        <div class="pp-popup-hd">
+          <div class="pp-popup-title">Tumbling Deduction</div>
+          <div class="pp-popup-sub">−0.25 EACH · ADD AS MANY AS YOU NEED</div>
+        </div>
+        <div class="pp-popup-body" style="padding:14px 22px 18px">
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div>
+              <label style="font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--stone);display:block;margin-bottom:6px">Athlete name</label>
+              <input id="pp-tumb-name" type="text" placeholder="e.g. Ruby" autocomplete="off" style="width:100%;padding:11px 12px;background:#faf8fa;border:1.5px solid var(--border);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--ink);outline:none"/>
+            </div>
+            <div>
+              <label style="font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--stone);display:block;margin-bottom:6px">What happened</label>
+              <input id="pp-tumb-desc" type="text" placeholder="e.g. didn't land back tuck" autocomplete="off" style="width:100%;padding:11px 12px;background:#faf8fa;border:1.5px solid var(--border);border-radius:9px;font-family:'DM Sans',sans-serif;font-size:14px;color:var(--ink);outline:none"/>
+            </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;background:linear-gradient(135deg,#fff4f2,#ffe7e3);border:1px solid #e8b8b0;border-radius:9px">
+              <div style="font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--stone)">Deduction</div>
+              <div style="font-family:'DM Serif Display',serif;font-size:22px;font-style:italic;color:#b33a2d;font-weight:600;line-height:1">−0.25</div>
+            </div>
+          </div>
+        </div>
+        <div class="pp-popup-foot">
+          <button type="button" class="pp-popup-btn-cancel" data-pp-popup-action="cancel">Cancel</button>
+          <button type="button" class="pp-popup-btn-save" data-pp-popup-action="save-tumbling">Save −0.25</button>
+        </div>
+      </div>
+    </div>`;
+    // Auto-focus the name field for fast entry
+    setTimeout(()=>{const n=document.getElementById("pp-tumb-name");if(n)n.focus();},50);
+  }
 
-  let html=`<div class="pp-popup-backdrop" data-pp-popup-action="dismiss-bg">
-    <div class="pp-popup" onclick="event.stopPropagation()">
-      <div class="pp-popup-hd">
-        <div class="pp-popup-title">${esc(flyer)} · ${esc(stuntLabel)}</div>
-        <div class="pp-popup-sub">SELECT DEDUCTIONS · MULTIPLE OK</div>
-      </div>
-      <div class="pp-popup-body">
-        <div class="pp-popup-section">
-          <div class="pp-popup-section-hd">Routine Infractions</div>
-          ${PP_DEDUCT_INFRACTIONS.map(renderRow).join("")}
-        </div>
-        <div class="pp-popup-section">
-          <div class="pp-popup-section-hd">Rule Violations</div>
-          ${PP_DEDUCT_VIOLATIONS.map(renderRow).join("")}
-        </div>
-        <div class="pp-popup-section-hd" style="padding:0 22px;margin-top:8px">Or — didn't perform</div>
-        <div class="pp-popup-noperf-grid">
-          ${PP_NOPERF_OPTIONS.map(o=>`<button type="button" class="pp-popup-noperf-btn" data-pp-popup-action="noperf" data-pp-popup-id="${esc(o.id)}"><div class="pp-popup-noperf-emoji">${o.emoji}</div>${esc(o.label)}</button>`).join("")}
-        </div>
-      </div>
-      <div class="pp-popup-foot">
-        <button type="button" class="pp-popup-btn-cancel" data-pp-popup-action="cancel">Cancel</button>
-        <button type="button" class="pp-popup-btn-save" data-pp-popup-action="save"${deductions.size===0?" disabled":""}>${deductions.size===0?"Pick deductions":"Save −"+totalSelected.toFixed(2)}</button>
-      </div>
-    </div>
-  </div>`;
-  mount.innerHTML=html;
-
-  // Delegated handlers for the popup
+  // Single delegated handler — the click bug fix:
+  // Previously had `onclick="event.stopPropagation()"` on the popup card which blocked all clicks
+  // inside from reaching this handler. Now we just check whether the click was on an action element
+  // OR on the bare backdrop (= dismiss).
   const backdrop=mount.querySelector(".pp-popup-backdrop");
   if(!backdrop)return;
   backdrop.addEventListener("click",e=>{
     const t=e.target.closest("[data-pp-popup-action]");
-    if(!t)return;
-    const action=t.getAttribute("data-pp-popup-action");
-    const id=t.getAttribute("data-pp-popup-id");
-    if(action==="cancel"||action==="dismiss-bg"){ppFoPopup=null;ppFoRenderPopup();}
-    else if(action==="toggle-deduct"){
-      if(deductions.has(id))deductions.delete(id);else deductions.add(id);
-      ppFoRenderPopup();
+    if(t){
+      const action=t.getAttribute("data-pp-popup-action");
+      const id=t.getAttribute("data-pp-popup-id");
+      if(action==="cancel"){ppFoPopup=null;ppFoRenderPopup();return;}
+      if(ppFoPopup.kind==="cell-deductions"){
+        const{flyer,stuntId,deductions}=ppFoPopup;
+        if(action==="toggle-deduct"){
+          if(deductions.has(id))deductions.delete(id);else deductions.add(id);
+          ppFoRenderPopup();
+        }else if(action==="noperf"){
+          // Clear popup FIRST so the cell-update's re-render check (!ppFoPopup) passes
+          // and the grid actually refreshes to show the new state.
+          ppFoPopup=null;
+          ppFoSetCell(flyer,stuntId,{status:id,updated_at:new Date().toISOString()});
+        }else if(action==="save"){
+          if(deductions.size===0)return;
+          ppFoPopup=null;
+          ppFoSetCell(flyer,stuntId,{status:"not_hit",deductions:[...deductions],updated_at:new Date().toISOString()});
+        }
+      }else if(ppFoPopup.kind==="tumbling-add"){
+        if(action==="save-tumbling"){
+          const nameEl=document.getElementById("pp-tumb-name");
+          const descEl=document.getElementById("pp-tumb-desc");
+          const name=(nameEl&&nameEl.value||"").trim();
+          const desc=(descEl&&descEl.value||"").trim();
+          if(!name){alert("Please enter an athlete name.");if(nameEl)nameEl.focus();return;}
+          if(!desc){alert("Please describe what happened.");if(descEl)descEl.focus();return;}
+          ppFoPopup=null;
+          ppFoAddTumbling(name,desc);
+        }
+      }
+      return;
     }
-    else if(action==="noperf"){
-      // Immediately set this cell as absent/missed/na and close popup
-      ppFoSetCell(flyer,stuntId,{status:id,updated_at:new Date().toISOString()});
-      ppFoPopup=null;ppFoRenderPopup();
-    }
-    else if(action==="save"){
-      if(deductions.size===0)return;
-      ppFoSetCell(flyer,stuntId,{status:"not_hit",deductions:[...deductions],updated_at:new Date().toISOString()});
-      ppFoPopup=null;ppFoRenderPopup();
-    }
+    // Click outside any action element — if it landed on the bare backdrop (not the popup card), dismiss
+    if(e.target===backdrop){ppFoPopup=null;ppFoRenderPopup();}
   });
 }
 
