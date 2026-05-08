@@ -209,6 +209,23 @@ body{font-family:'DM Sans',sans-serif;color:var(--ink);}
 .last-session-lbl{font-size:8px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:#555;margin-bottom:5px;}
 .last-session-text{font-size:11px;color:#666;line-height:1.5;font-style:italic;}
 .last-session-date{font-size:9px;color:#444;margin-top:4px;}
+/* PINK PANTHERS STUNT TRACKER */
+.pp-stunt-tile{background:var(--white);border:2px solid var(--border);border-radius:16px;padding:24px 20px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;transition:all .2s;}
+.pp-stunt-tile:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.1);border-color:var(--pink);}
+.pp-stunt-tile:active{transform:scale(.97);}
+.pp-stunt-num{font-family:'DM Serif Display',serif;font-size:32px;font-style:italic;color:var(--pink);line-height:1;}
+.pp-stunt-label{font-size:16px;font-weight:700;color:var(--ink);}
+.pp-stunt-desc{font-size:11px;color:var(--stone);line-height:1.4;}
+.pp-group-tile{background:var(--white);border:2px solid var(--border);border-radius:14px;padding:20px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;transition:all .2s;}
+.pp-group-tile:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.08);border-color:var(--pink);}
+.pp-group-initial{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#e91e8c,#9b59b6);display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:28px;font-style:italic;color:white;}
+.pp-group-name{font-size:15px;font-weight:700;color:var(--ink);}
+.pp-counter-btn{width:72px;height:72px;border-radius:50%;border:none;cursor:pointer;font-size:28px;font-weight:700;display:flex;align-items:center;justify-content:center;transition:all .15s;user-select:none;}
+.pp-counter-btn:active{transform:scale(.9);}
+.pp-hit-rate{font-family:'DM Serif Display',serif;font-size:52px;font-style:italic;text-align:center;line-height:1;}
+.confetti-piece{position:fixed;width:10px;height:10px;border-radius:2px;pointer-events:none;z-index:9999;animation:confettiFall linear forwards;}
+@keyframes confettiFall{0%{transform:translateY(-20px) rotate(0deg);opacity:1;}100%{transform:translateY(110vh) rotate(720deg);opacity:0;}}
+.trend-up{color:#2d7a52;}.trend-down{color:#b33a2d;}.trend-flat{color:var(--stone);}
 /* PINK CHECKBOX */
 .pink-chk{width:20px;height:20px;border:1.5px solid var(--border);border-radius:4px;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;}
 .pink-chk.on{background:var(--pink);border-color:var(--pink);}
@@ -386,7 +403,31 @@ const TEAMS=[
    stunts:[{id:"stunt1",label:"Main Stunt",athletes:["Amarni","Vogue","Maci","Emma","Freyah"]}],
    templates:{monday:{id:"monday",display:"Monday",time:"4:00 pm - 5:45 pm",duration:105},wednesday:{id:"wednesday",display:"Wednesday",time:"4:00 pm - 6:00 pm",duration:120}}},
   {id:"pink_panthers",name:"Pink Panthers",abbr:"PP",logo:"logo-pink-panthers.png",
-   stunts:[{id:"stunt1",label:"Main Stunt",athletes:["Maya","Layla","Kayla","Nadia","Talia","Delia","Celia"]},{id:"stunt2",label:"2nd Stunt",athletes:["Maya","Layla","Kayla","Nadia","Talia","Delia","Celia"]}],
+   noClassPlan:true,
+   ppStunts:[
+     {id:"pp_s1",label:"Stunt 1",desc:"Full up switch up",groups:[
+       {id:"pp_s1_ruby",name:"Ruby"},
+       {id:"pp_s1_freyah",name:"Freyah"},
+       {id:"pp_s1_amarni",name:"Amarni"},
+       {id:"pp_s1_emma",name:"Emma"},
+       {id:"pp_s1_sienna",name:"Sienna"}
+     ]},
+     {id:"pp_s2",label:"Stunt 2",desc:"1½ up, high to high, corkscrew, invert, waterfall",groups:[
+       {id:"pp_s2_emma",name:"Emma"},
+       {id:"pp_s2_ruby",name:"Ruby"},
+       {id:"pp_s2_freyah",name:"Freyah"},
+       {id:"pp_s2_amarni",name:"Amarni"}
+     ]},
+     {id:"pp_s3",label:"Stunt 3",desc:"Quarter switch up, kick full",groups:[
+       {id:"pp_s3_freyah",name:"Freyah"},
+       {id:"pp_s3_sienna",name:"Sienna"},
+       {id:"pp_s3_amarni",name:"Amarni"},
+       {id:"pp_s3_ruby",name:"Ruby"},
+       {id:"pp_s3_emma",name:"Emma"}
+     ]},
+     {id:"pp_pyramid",label:"Pyramid",desc:"Coming soon ✨",groups:[]}
+   ],
+   stunts:[{id:"stunt1",label:"Main Stunt",athletes:["Ruby","Freyah","Amarni","Emma","Sienna"]}],
    templates:{tuesday:{id:"tuesday",display:"Tuesday",time:"5:00 pm - 6:45 pm",duration:105},thursday:{id:"thursday",display:"Thursday",time:"6:00 pm - 7:30 pm",duration:90}}},
   {id:"miss_purrfect",name:"Miss Purrfect",abbr:"MP",logo:"logo-miss-purrfect.png",tossesLabel:"Opening",
    stunts:[
@@ -577,13 +618,20 @@ function openTeam(teamId){
   // Show coord tab only for pink kitties
   const coordWrap=document.getElementById("coord-nav-btn-wrap");
   if(coordWrap)coordWrap.style.display=teamId==="pink_kitties"?"block":"none";
+  // Hide class plans for noClassPlan teams
+  document.querySelectorAll(".team-nav-btn").forEach(b=>{if(b.textContent==="class plans")b.style.display=t.noClassPlan?"none":"block";});
   // Go straight to coord for pink kitties
   if(teamId==="pink_kitties"){curTeamTab="coord";document.querySelectorAll(".team-nav-btn").forEach(b=>b.classList.remove("active"));const coordBtn=document.querySelector("#coord-nav-btn-wrap .team-nav-btn");if(coordBtn)coordBtn.classList.add("active");}
+  // Go straight to stunt tracker for pink panthers
+  if(teamId==="pink_panthers"){curTeamTab="pp_stunts";document.querySelectorAll(".team-nav-btn").forEach(b=>b.classList.remove("active"));}
+  // Pink Panthers goes to stunt tracker
+  const t2=getTeam(teamId);
+  if(t2.customMode==="stunt_tracker"){showScreen("pp-stunt-home");renderPPHome();return;}
   showScreen("team-view");renderTeamTab();
 }
 function goBackToTeam(){stopSectionTimer();showScreen("team-view");renderTeamTab();}
 function teamTab(tab,btn){curTeamTab=tab;document.querySelectorAll(".team-nav-btn").forEach(b=>b.classList.remove("active"));if(btn)btn.classList.add("active");renderTeamTab();}
-function renderTeamTab(){const c=document.getElementById("team-content");if(!c)return;if(curTeamTab==="fullouts")renderFoView(c);else if(curTeamTab==="plans")renderPlansView(c);else if(curTeamTab==="analytics")renderTeamAnalytics(c);else if(curTeamTab==="checklist")renderChecklistView(c);else if(curTeamTab==="coord")renderCoordView(c);}
+function renderTeamTab(){const c=document.getElementById("team-content");if(!c)return;if(curTeamTab==="fullouts")renderFoView(c);else if(curTeamTab==="plans")renderPlansView(c);else if(curTeamTab==="analytics")renderTeamAnalytics(c);else if(curTeamTab==="checklist")renderChecklistView(c);else if(curTeamTab==="coord")renderCoordView(c);else if(curTeamTab==="pp_stunts")renderPPStunts(c);else if(curTeamTab==="pp_groups")renderPPGroups(c);else if(curTeamTab==="pp_session")renderPPSession(c);}
 
 // ── FULLOUT VIEW ──
 function renderFoView(container){
@@ -1148,6 +1196,235 @@ async function clearCoordCell(){
 }
 
 function closeCoordPopup(e){if(e.target.id==="coord-popup")document.getElementById("coord-popup").style.display="none";}
+
+// ── PINK PANTHERS STUNT TRACKER ──
+let ppCurStunt=null,ppCurGroup=null,ppSessionData={};
+let ppListener=null,ppCache={};
+
+function ppCol(){return db.collection("teams").doc("pink_panthers").collection("stunt_sessions");}
+function ppNotesCol(){return db.collection("teams").doc("pink_panthers").collection("stunt_notes");}
+function ppNotesCache(){return window._ppNotes||{};}
+
+function startPPListener(){
+  if(ppListener)return;
+  ppCol().orderBy("date","desc").limit(60).onSnapshot(snap=>{
+    ppCache={};
+    snap.docs.forEach(d=>{const s=d.data();const key=s.stuntId+"_"+s.groupId;if(!ppCache[key])ppCache[key]=[];ppCache[key].push(s);});
+    if(curTeamTab==="pp_stunts"||curTeamTab==="pp_groups"||curTeamTab==="pp_session")renderTeamTab();
+  });
+  ppNotesCol().onSnapshot(snap=>{
+    window._ppNotes={};snap.docs.forEach(d=>{window._ppNotes[d.id]=d.data();});
+    if(curTeamTab==="pp_session")renderTeamTab();
+  });
+}
+
+function renderPPStunts(container){
+  startPPListener();
+  const team=getTeam("pink_panthers");
+  const stunts=team.ppStunts||[];
+  const icons=["★","✦","✶","◆"];
+  let html=`<div style="flex:1;overflow-y:auto;padding:24px;background:linear-gradient(135deg,#fff0f8,#f8f0ff)">
+    <div style="font-family:'DM Serif Display',serif;font-size:28px;font-style:italic;text-align:center;color:var(--ink);margin-bottom:4px">Pink Panthers</div>
+    <div style="text-align:center;font-size:12px;color:var(--stone);margin-bottom:24px;letter-spacing:1px;text-transform:uppercase">select a stunt to track</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:600px;margin:0 auto">`;
+  stunts.forEach((s,i)=>{
+    const sessions=Object.values(ppCache).flat().filter(x=>x.stuntId===s.id);
+    const totalHits=sessions.reduce((a,x)=>a+(x.hits||0),0);
+    const totalAtts=sessions.reduce((a,x)=>a+(x.attempts||0),0);
+    const pct=totalAtts>0?Math.round((totalHits/totalAtts)*100):null;
+    html+=`<div class="pp-stunt-tile" onclick="selectPPStunt('${s.id}')">
+      <div class="pp-stunt-num">${icons[i]||"★"}</div>
+      <div class="pp-stunt-label">${esc(s.label)}</div>
+      <div class="pp-stunt-desc">${esc(s.desc)}</div>
+      ${pct!==null?`<div style="margin-top:8px;font-size:11px;font-weight:700;color:${pctCol(pct)}">${pct}% overall</div>`:""}
+    </div>`;
+  });
+  html+=`</div></div>`;
+  container.innerHTML=html;
+}
+
+function selectPPStunt(stuntId){ppCurStunt=stuntId;curTeamTab="pp_groups";renderTeamTab();}
+
+function renderPPGroups(container){
+  const team=getTeam("pink_panthers");
+  const stunt=(team.ppStunts||[]).find(s=>s.id===ppCurStunt);
+  if(!stunt){renderPPStunts(container);return;}
+  if(!stunt.groups||!stunt.groups.length){container.innerHTML=`<div style="padding:40px;text-align:center;color:var(--stone);font-style:italic">No groups set up yet for ${esc(stunt.label)}</div>`;return;}
+  let html=`<div style="flex:1;overflow-y:auto;padding:24px;background:linear-gradient(135deg,#fff0f8,#f8f0ff)">
+    <button onclick="curTeamTab='pp_stunts';renderTeamTab()" style="background:none;border:none;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--stone);margin-bottom:16px;padding:0">&#8592; back</button>
+    <div style="font-family:'DM Serif Display',serif;font-size:24px;font-style:italic;text-align:center;margin-bottom:4px">${esc(stunt.label)}</div>
+    <div style="text-align:center;font-size:11px;color:var(--stone);margin-bottom:24px">${esc(stunt.desc)}</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:14px;max-width:700px;margin:0 auto">`;
+  stunt.groups.forEach(g=>{
+    const sessions=(ppCache[stunt.id+"_"+g.id]||[]);
+    const last=sessions[0];
+    const pct=last&&last.attempts>0?Math.round((last.hits/last.attempts)*100):null;
+    const trend=calcTrend(sessions);
+    html+=`<div class="pp-group-tile" onclick="selectPPGroup('${g.id}')">
+      <div class="pp-group-initial">${g.name[0]}</div>
+      <div class="pp-group-name">${esc(g.name)}'s group</div>
+      ${pct!==null?`<div style="font-size:13px;font-weight:700;color:${pctCol(pct)}">${pct}% last session</div>`:""}
+      ${trend?`<div class="${trend.cls}">${trend.arrow}</div>`:""}
+    </div>`;
+  });
+  html+=`</div></div>`;
+  container.innerHTML=html;
+}
+
+function calcTrend(sessions){
+  if(sessions.length<2)return null;
+  const p1=sessions[0].attempts>0?sessions[0].hits/sessions[0].attempts:0;
+  const p2=sessions[1].attempts>0?sessions[1].hits/sessions[1].attempts:0;
+  const diff=p1-p2;
+  if(diff>0.05)return{arrow:"↑ improving",cls:"trend-up"};
+  if(diff<-0.05)return{arrow:"↓ dropping",cls:"trend-down"};
+  return{arrow:"→ steady",cls:"trend-flat"};
+}
+
+function selectPPGroup(groupId){ppCurGroup=groupId;ppSessionData={attempts:0,hits:0};curTeamTab="pp_session";renderTeamTab();}
+
+function renderPPSession(container){
+  const team=getTeam("pink_panthers");
+  const stunt=(team.ppStunts||[]).find(s=>s.id===ppCurStunt);
+  const group=stunt&&stunt.groups.find(g=>g.id===ppCurGroup);
+  if(!stunt||!group){renderPPGroups(container);return;}
+  const atts=ppSessionData.attempts||0;const hits=ppSessionData.hits||0;
+  const pct=atts>0?Math.round((hits/atts)*100):null;
+  const pctColor=pct!==null?pctCol(pct):"var(--stone)";
+  const sessions=(ppCache[stunt.id+"_"+group.id]||[]);
+  const noteKey=stunt.id+"_"+group.id;
+  const noteData=ppNotesCache()[noteKey]||{items:[]};
+  const pendingNotes=noteData.items.filter(n=>!n.done);
+
+  let html=`<div style="flex:1;overflow-y:auto;padding:20px 16px 60px;background:linear-gradient(135deg,#fff0f8,#f8f0ff)">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">
+      <button onclick="curTeamTab='pp_groups';renderTeamTab()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--stone)">&#8592;</button>
+      <div><div style="font-family:'DM Serif Display',serif;font-size:22px;font-style:italic">${esc(stunt.label)} · ${esc(group.name)}'s group</div>
+      <div style="font-size:11px;color:var(--stone)">${esc(stunt.desc)}</div></div>
+    </div>
+
+    <!-- HIT RATE -->
+    <div style="background:white;border-radius:16px;padding:20px;margin-bottom:16px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,.06)">
+      <div class="pp-hit-rate" style="color:${pctColor}">${pct!==null?pct+"%":"--"}</div>
+      <div style="font-size:12px;color:var(--stone);margin-top:4px">${hits} hits / ${atts} attempts</div>
+    </div>
+
+    <!-- COUNTERS -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+      <div style="background:white;border-radius:16px;padding:16px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,.06)">
+        <div style="font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--stone);margin-bottom:10px">attempts</div>
+        <div style="font-size:40px;font-weight:700;color:var(--ink);margin-bottom:10px">${atts}</div>
+        <div style="display:flex;justify-content:center;gap:10px">
+          <button class="pp-counter-btn" style="background:#f0efed;color:var(--stone)" onclick="ppAdjust('attempts',-1)">−</button>
+          <button class="pp-counter-btn" style="background:var(--ink);color:white" onclick="ppAdjust('attempts',1)">+</button>
+        </div>
+      </div>
+      <div style="background:white;border-radius:16px;padding:16px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,.06)">
+        <div style="font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--stone);margin-bottom:10px">hits 🎯</div>
+        <div style="font-size:40px;font-weight:700;color:var(--pink);margin-bottom:10px">${hits}</div>
+        <div style="display:flex;justify-content:center;gap:10px">
+          <button class="pp-counter-btn" style="background:#fce4f3;color:var(--pink)" onclick="ppAdjust('hits',-1)">−</button>
+          <button class="pp-counter-btn" style="background:var(--pink);color:white" onclick="ppHit()">HIT! 🎉</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SAVE SESSION -->
+    <button onclick="savePPSession()" style="width:100%;padding:14px;background:linear-gradient(135deg,#e91e8c,#9b59b6);color:white;border:none;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:16px;letter-spacing:.5px">save session ✓</button>
+
+    <!-- NOTES -->
+    <div style="background:white;border-radius:16px;padding:16px;box-shadow:0 2px 12px rgba(0,0,0,.06);margin-bottom:16px">
+      <div style="font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--stone);margin-bottom:10px">corrections to fix 📋</div>
+      ${pendingNotes.length?`<div style="margin-bottom:10px">${pendingNotes.map((n,ni)=>`<div style="display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+        <div onclick="togglePPNote('${noteKey}',${noteData.items.findIndex(x=>x.id===n.id)})" style="width:22px;height:22px;border:2px solid var(--border);border-radius:5px;flex-shrink:0;cursor:pointer;margin-top:1px;display:flex;align-items:center;justify-content:center;background:transparent">✓</div>
+        <span style="font-size:13px;color:var(--ink);flex:1">${esc(n.text)}</span>
+      </div>`).join("")}</div>`:"<div style='font-size:12px;color:var(--stone);font-style:italic;margin-bottom:10px'>No corrections yet — you're killing it! 💪</div>"}
+      <div style="display:flex;gap:8px"><input id="pp-note-inp" placeholder="Add a correction..." style="flex:1;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-family:'DM Sans',sans-serif;font-size:13px;outline:none" onkeydown="if(event.key==='Enter')addPPNote('${noteKey}')"/><button onclick="addPPNote('${noteKey}')" style="padding:10px 14px;background:var(--pink);color:white;border:none;border-radius:10px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer">+ add</button></div>
+    </div>
+
+    <!-- PAST SESSIONS -->
+    ${sessions.length?`<div style="background:white;border-radius:16px;padding:16px;box-shadow:0 2px 12px rgba(0,0,0,.06)">
+      <div style="font-size:10px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--stone);margin-bottom:10px">past sessions 📈</div>
+      ${sessions.slice(0,5).map((s,i)=>{
+        const sp=s.attempts>0?Math.round((s.hits/s.attempts)*100):0;
+        const trend=i<sessions.length-1?calcTrend([s,sessions[i+1]]):null;
+        return`<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)">
+          <span style="font-size:11px;color:var(--stone);min-width:70px">${fmtShort(s.date)}</span>
+          <div style="flex:1;background:var(--border);border-radius:100px;height:6px;overflow:hidden"><div style="height:100%;width:${sp}%;background:${pctCol(sp)};border-radius:100px"></div></div>
+          <span style="font-size:12px;font-weight:700;color:${pctCol(sp)};min-width:36px;text-align:right">${sp}%</span>
+          <span style="font-size:11px;color:var(--stone)">${s.hits}/${s.attempts}</span>
+          ${trend?`<span class="${trend.cls}" style="font-size:12px">${trend.arrow.split(" ")[0]}</span>`:""}
+        </div>`;
+      }).join("")}
+    </div>`:""}
+  </div>`;
+  container.innerHTML=html;
+}
+
+function ppAdjust(field,delta){
+  ppSessionData[field]=Math.max(0,(ppSessionData[field]||0)+delta);
+  // cap hits at attempts
+  if(ppSessionData.hits>ppSessionData.attempts)ppSessionData.hits=ppSessionData.attempts;
+  renderTeamTab();
+}
+
+function ppHit(){
+  ppSessionData.attempts=(ppSessionData.attempts||0)+1;
+  ppSessionData.hits=(ppSessionData.hits||0)+1;
+  // Check for 100% hit rate - celebrate!
+  if(ppSessionData.attempts>0&&ppSessionData.hits===ppSessionData.attempts&&ppSessionData.attempts>=3){
+    launchConfetti();
+  }
+  renderTeamTab();
+}
+
+function launchConfetti(){
+  const colors=["#e91e8c","#9b59b6","#f1c40f","#2ecc71","#3498db","#e74c3c","#ff9800"];
+  playAlarm(); // reuse alarm for celebration sound
+  // Play a fun sound
+  try{
+    if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    [0,100,200,300,400].forEach((delay,i)=>{
+      const osc=audioCtx.createOscillator();const gain=audioCtx.createGain();
+      osc.connect(gain);gain.connect(audioCtx.destination);
+      osc.frequency.value=[523,659,784,1047,1319][i];osc.type="sine";
+      gain.gain.setValueAtTime(0.3,audioCtx.currentTime+delay/1000);
+      gain.gain.exponentialRampToValueAtTime(0.001,audioCtx.currentTime+delay/1000+0.3);
+      osc.start(audioCtx.currentTime+delay/1000);osc.stop(audioCtx.currentTime+delay/1000+0.3);
+    });
+  }catch(e){}
+  for(let i=0;i<80;i++){
+    const el=document.createElement("div");
+    el.className="confetti-piece";
+    el.style.cssText=`left:${Math.random()*100}vw;top:-10px;background:${colors[Math.floor(Math.random()*colors.length)]};width:${6+Math.random()*8}px;height:${6+Math.random()*8}px;border-radius:${Math.random()>0.5?"50%":"2px"};animation-duration:${1.5+Math.random()*2}s;animation-delay:${Math.random()*0.5}s`;
+    document.body.appendChild(el);
+    setTimeout(()=>el.remove(),3500);
+  }
+}
+
+async function savePPSession(){
+  if(!ppSessionData.attempts){alert("Add some attempts first!");return;}
+  const session={id:uid(),stuntId:ppCurStunt,groupId:ppCurGroup,date:new Date().toISOString().split("T")[0],attempts:ppSessionData.attempts,hits:ppSessionData.hits,updated_at:new Date().toISOString()};
+  await ppCol().doc(session.id).set(session);
+  if(ppSessionData.hits===ppSessionData.attempts&&ppSessionData.attempts>=3)launchConfetti();
+  ppSessionData={attempts:0,hits:0};
+  renderTeamTab();
+}
+
+async function addPPNote(noteKey){
+  const inp=document.getElementById("pp-note-inp");const txt=inp?inp.value.trim():"";if(!txt)return;
+  const notes=ppNotesCache()[noteKey]||{items:[]};
+  notes.items=notes.items||[];
+  notes.items.push({id:uid(),text:txt,done:false,created_at:new Date().toISOString()});
+  await ppNotesCol().doc(noteKey).set(notes);
+  if(inp)inp.value="";
+}
+
+async function togglePPNote(noteKey,idx){
+  const notes=ppNotesCache()[noteKey]||{items:[]};
+  if(notes.items[idx])notes.items[idx].done=true;
+  await ppNotesCol().doc(noteKey).set(notes);
+}
 
 // ── CHECKLIST ──
 function renderChecklistView(container){
