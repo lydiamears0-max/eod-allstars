@@ -1661,10 +1661,37 @@ function closeCoordPopup(e){if(e.target.id==="coord-popup")document.getElementBy
 
 // ── PINK PANTHERS STUNT TRACKER ──
 let ppCurStunt=null,ppCurGroup=null,ppSessionData={};
+
+// Per-group session drafts (persist across navigation via localStorage).
+// Key format: "stuntId_groupId" → { attempts, hits, date }
+// Drafts are scoped to today; older ones get pruned on load so they don't leak across days.
+let ppSessionDrafts = {};
+(function ppLoadDrafts(){
+  try {
+    const stored = JSON.parse(localStorage.getItem("pp_session_drafts") || "{}");
+    const today = new Date().toISOString().split("T")[0];
+    for (const key in stored) {
+      if (stored[key] && stored[key].date === today) ppSessionDrafts[key] = stored[key];
+    }
+    localStorage.setItem("pp_session_drafts", JSON.stringify(ppSessionDrafts));
+  } catch(e) { ppSessionDrafts = {}; }
+})();
+function ppSaveDraft(){
+  if(!ppCurStunt || !ppCurGroup) return;
+  const key = ppCurStunt + "_" + ppCurGroup;
+  const today = new Date().toISOString().split("T")[0];
+  if((ppSessionData.attempts||0) > 0 || (ppSessionData.hits||0) > 0){
+    ppSessionDrafts[key] = {attempts: ppSessionData.attempts||0, hits: ppSessionData.hits||0, date: today};
+  } else {
+    delete ppSessionDrafts[key]; // both at 0 — no point keeping a draft
+  }
+  try { localStorage.setItem("pp_session_drafts", JSON.stringify(ppSessionDrafts)); } catch(e){}
+}
 let ppListener=null,ppCache={};
-let ppFoCache={}; // { "YYYY-MM-DD": {date, cells:{...}, updated_at} }
-let ppFoCurDate=null; // date string the user is currently viewing
-let ppFoPopup=null; // { flyer, stuntId, deductions:Set } when popup open
+let ppFoCache={}; // { id: {id, date, startedAt, cells:{...}, tumbling:[], updated_at} }
+let ppFoCurId=null; // null = tabs/history mode; otherwise editing this fullout
+let ppFoTab="overview"; // overview | stunt_pp_s1 | stunt_pp_s2 | stunt_pp_s3 | stunt_pp_pyramid | tumbling
+let ppFoPopup=null; // { kind, ... } when popup open
 let ppStarsCache={}; // { athleteId: {name, count, updated_at} }
 let ppHousesCache={red:0,green:0,blue:0,yellow:0,updated_at:null};
 let ppStuntTrainingTab="pp_s1"; // currently-active tab on the Stunt Training sub-page
@@ -1721,11 +1748,19 @@ function startPPListener(){
     window._ppNotes={};snap.docs.forEach(d=>{window._ppNotes[d.id]=d.data();});
     if(curTeamTab==="pp_session")renderTeamTab();
   });
-  ppFoCol().orderBy("date","desc").limit(60).onSnapshot(snap=>{
+  ppFoCol().limit(200).onSnapshot(snap=>{
     ppFoCache={};
-    snap.docs.forEach(d=>{const f=d.data();ppFoCache[f.date||d.id]=f;});
+    snap.docs.forEach(d=>{
+      const f=d.data();
+      f.id = f.id || d.id;
+      // Migration: old docs were keyed by date and may not have startedAt — synthesize one
+      if(!f.startedAt && f.date) f.startedAt = f.date + "T12:00:00.000Z";
+      ppFoCache[f.id] = f;
+    });
     // Only refresh the fullout screen if the popup is NOT open — otherwise we'd interrupt the user mid-selection.
     if(curTeamTab==="pp_fullout"&&!ppFoPopup)renderTeamTab();
+    if(curTeamTab==="pp_team_stats")renderTeamTab(); // fullout filter pulls from this cache
+    if(curTeamTab==="pp_home")renderTeamTab(); // tile sub-text shows fullout count today
   });
   ppStarsCol().onSnapshot(snap=>{
     ppStarsCache={};
@@ -1800,8 +1835,10 @@ function renderPPHome(container){
   const totalAtts = allSessions.reduce((a,s)=>a+(s.attempts||0),0);
   const overallPct = totalAtts>0 ? Math.round((totalHits/totalAtts)*100) : null;
 
-  const todayFo = ppFoCache[new Date().toISOString().split("T")[0]];
-  const foDed = todayFo ? ppFoTotalDeduction(todayFo) : 0;
+  const today = new Date().toISOString().split("T")[0];
+  const todayFos = Object.values(ppFoCache).filter(f => f.date === today);
+  const foDed = todayFos.reduce((sum, f) => sum + ppFoTotalDeduction(f), 0);
+  const foCount = todayFos.length;
 
   const totalStars = Object.values(ppStarsCache).reduce((a,s)=>a+(s.count||0),0);
   const housePts = (ppHousesCache.red||0)+(ppHousesCache.green||0)+(ppHousesCache.blue||0)+(ppHousesCache.yellow||0);
@@ -1839,7 +1876,7 @@ function renderPPHome(container){
       <button type="button" class="pp-tile big" data-pp-home-action="goto-fullout" style="--tile-accent:#c4559a;background:linear-gradient(135deg,#fff5fa 0%,#ffeaf5 100%)">
         <div class="pp-tile-icon">💪</div>
         <div class="pp-tile-title" style="color:#9b3878">Fullout Tracker</div>
-        <div class="pp-tile-sub">${foDed>0?"−"+foDed.toFixed(2)+" today":"score every fullout"}</div>
+        <div class="pp-tile-sub">${foCount>0?foCount+(foCount===1?" fullout":" fullouts")+" today"+(foDed>0?" · −"+foDed.toFixed(2):""):"score every fullout"}</div>
       </button>
     </div>
 
@@ -2341,7 +2378,23 @@ function calcTrend(sessions){
   return{arrow:"→ steady",cls:"trend-flat"};
 }
 
-function selectPPGroup(groupId){ppCurGroup=groupId;ppSessionData={attempts:0,hits:0,isFullout:false,celebrated:false};curTeamTab="pp_session";renderTeamTab();}
+function selectPPGroup(groupId){
+  ppCurGroup=groupId;
+  // Restore any in-progress draft for this group; otherwise start fresh.
+  const key = ppCurStunt + "_" + groupId;
+  const draft = ppSessionDrafts[key];
+  if(draft){
+    ppSessionData = {attempts: draft.attempts||0, hits: draft.hits||0, celebrated: false};
+    // If the restored state is already at 100%, mark celebrated=true so we don't re-fire confetti
+    // on the first re-render. ppAdjust/ppHit will re-arm it normally if they drop below 100%.
+    const at100 = ppSessionData.attempts>0 && ppSessionData.hits===ppSessionData.attempts;
+    ppSessionData.celebrated = at100;
+  } else {
+    ppSessionData = {attempts:0, hits:0, celebrated:false};
+  }
+  curTeamTab="pp_session";
+  renderTeamTab();
+}
 
 function renderPPSession(container){
   const team=getTeam("pink_panthers");
@@ -2389,17 +2442,8 @@ function renderPPSession(container){
       </div>
     </div>
 
-    <!-- FULLOUT TOGGLE -->
-    <div style="background:white;border-radius:12px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;gap:12px;box-shadow:0 2px 12px rgba(0,0,0,.06);cursor:pointer" onclick="ppToggleFullout()">
-      <div id="pp-fullout-chk" style="width:22px;height:22px;border:2px solid var(--border);border-radius:6px;flex-shrink:0;display:flex;align-items:center;justify-content:center;background:${ppSessionData.isFullout?"var(--pink)":"transparent"};border-color:${ppSessionData.isFullout?"var(--pink)":"var(--border)"};transition:all .15s">${ppSessionData.isFullout?'<span style="color:white;font-size:14px;font-weight:700;line-height:1">✓</span>':""}</div>
-      <div style="flex:1">
-        <div style="font-size:13px;font-weight:700;color:var(--ink)">Mark as fullout 💪</div>
-        <div style="font-size:11px;color:var(--stone)">Tag this session so it shows under the Fullout filter</div>
-      </div>
-    </div>
-
     <!-- SAVE SESSION -->
-    <button onclick="savePPSession()" style="width:100%;padding:14px;background:linear-gradient(135deg,#e91e8c,#9b59b6);color:white;border:none;border-radius:12px;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:16px;letter-spacing:.5px">save session ✓</button>
+    <button onclick="savePPSession()" style="width:100%;padding:24px;background:linear-gradient(135deg,#e91e8c,#9b59b6);color:white;border:none;border-radius:18px;font-family:'DM Sans',sans-serif;font-size:20px;font-weight:800;cursor:pointer;margin-bottom:16px;letter-spacing:1px;text-transform:uppercase;box-shadow:0 6px 20px rgba(196,85,154,.35);-webkit-tap-highlight-color:rgba(255,255,255,.2);touch-action:manipulation">save session ✓</button>
 
     <!-- NOTES -->
     <div style="background:white;border-radius:16px;padding:16px;box-shadow:0 2px 12px rgba(0,0,0,.06);margin-bottom:16px">
@@ -2442,6 +2486,7 @@ function ppHit(){
     ppSessionData.celebrated=true;
     launchConfetti();
   }
+  ppSaveDraft();
 }
 
 function ppAdjust(field,delta){
@@ -2452,6 +2497,7 @@ function ppAdjust(field,delta){
   const at100=ppSessionData.attempts>0&&ppSessionData.hits===ppSessionData.attempts;
   if(!at100)ppSessionData.celebrated=false;
   updatePPDisplay();
+  ppSaveDraft();
 }
 
 function updatePPDisplay(){
@@ -2497,8 +2543,12 @@ function launchConfetti(){
 
 async function savePPSession(){
   if(!ppSessionData.attempts){alert("Add some attempts first!");return;}
-  const session={id:uid(),stuntId:ppCurStunt,groupId:ppCurGroup,date:new Date().toISOString().split("T")[0],attempts:ppSessionData.attempts,hits:ppSessionData.hits,isFullout:!!ppSessionData.isFullout,updated_at:new Date().toISOString()};
+  const session={id:uid(),stuntId:ppCurStunt,groupId:ppCurGroup,date:new Date().toISOString().split("T")[0],attempts:ppSessionData.attempts,hits:ppSessionData.hits,updated_at:new Date().toISOString()};
   await ppCol().doc(session.id).set(session);
+  // Clear the draft now that it's saved permanently to Firestore
+  const dkey = ppCurStunt + "_" + ppCurGroup;
+  delete ppSessionDrafts[dkey];
+  try { localStorage.setItem("pp_session_drafts", JSON.stringify(ppSessionDrafts)); } catch(e){}
   // Note: confetti already fires from ppHit() when 100% is reached, so we don't fire it again here.
   ppSessionData={attempts:0,hits:0};
   renderTeamTab();
@@ -2589,10 +2639,23 @@ function renderPPTeamStats(container){
   stunts.forEach(stunt=>{
     // Build rows for this stunt
     const rows=(stunt.groups||[]).map(g=>{
-      const sessions=ppCache[stunt.id+"_"+g.id]||[];
-      const filtered=ppFilterSessions(sessions,filter);
-      const atts=filtered.reduce((a,s)=>a+(s.attempts||0),0);
-      const hits=filtered.reduce((a,s)=>a+(s.hits||0),0);
+      let atts, hits;
+      if(filter==="fullout"){
+        // Derive from ppFoCache: each (flyer × stunt) cell that's hit/not_hit counts as one attempt.
+        const cells=[];
+        Object.values(ppFoCache).forEach(fo=>{
+          if(!fo.cells) return;
+          const cell=fo.cells[g.name.toLowerCase()+"__"+stunt.id];
+          if(cell && (cell.status==="hit" || cell.status==="not_hit")) cells.push(cell);
+        });
+        atts=cells.length;
+        hits=cells.filter(c=>c.status==="hit").length;
+      }else{
+        const sessions=ppCache[stunt.id+"_"+g.id]||[];
+        const filtered=ppFilterSessions(sessions,filter);
+        atts=filtered.reduce((a,s)=>a+(s.attempts||0),0);
+        hits=filtered.reduce((a,s)=>a+(s.hits||0),0);
+      }
       const pct=atts>0?Math.round((hits/atts)*100):null;
       return{groupId:g.id,name:g.name,atts,hits,pct};
     });
@@ -2663,9 +2726,9 @@ function ppFlyerInStunt(flyer,stunt){return(stunt.groups||[]).some(g=>g.name===f
 function ppFoCellKey(flyer,stuntId){return flyer.toLowerCase()+"__"+stuntId;}
 
 function ppFoGetCurrent(){
-  // Default to today's fullout. If no doc exists yet, return a fresh empty one.
-  const date=ppFoCurDate||new Date().toISOString().split("T")[0];
-  return ppFoCache[date]||{date,cells:{}};
+  // Returns the fullout currently being edited, or null if not editing one.
+  if(!ppFoCurId) return null;
+  return ppFoCache[ppFoCurId] || null;
 }
 
 function ppFoCellTotalDeduction(cell){
@@ -2682,16 +2745,18 @@ function ppFoTotalDeduction(fo){
 }
 
 async function ppFoSetCell(flyer,stuntId,update){
-  const date=ppFoCurDate||new Date().toISOString().split("T")[0];
-  const cur=ppFoCache[date]||{date,cells:{}};
+  if(!ppFoCurId) return;
+  const cur=ppFoCache[ppFoCurId];
+  if(!cur) return;
+  if(!cur.cells) cur.cells={};
   const key=ppFoCellKey(flyer,stuntId);
   if(update===null||update===undefined){delete cur.cells[key];}
   else{cur.cells[key]=update;}
   cur.updated_at=new Date().toISOString();
-  ppFoCache[date]=cur; // optimistic local update
+  ppFoCache[ppFoCurId]=cur;
   // Re-render immediately so the user sees instant feedback (don't wait for the snapshot round-trip)
   if(curTeamTab==="pp_fullout"&&!ppFoPopup)renderTeamTab();
-  try{await ppFoCol().doc(date).set(cur);}catch(e){console.error("Failed to save fullout cell:",e);}
+  try{await ppFoCol().doc(ppFoCurId).set(cur);}catch(e){console.error("Failed to save fullout cell:",e);}
 }
 
 function ppFoOnHit(flyer,stuntId){
@@ -2703,7 +2768,8 @@ function ppFoOnHit(flyer,stuntId){
 function ppFoOnMiss(flyer,stuntId){
   // Open the deductions popup. If the cell already has data, pre-populate with existing selections.
   const fo=ppFoGetCurrent();
-  const existing=fo.cells[ppFoCellKey(flyer,stuntId)];
+  if(!fo) return;
+  const existing=fo.cells&&fo.cells[ppFoCellKey(flyer,stuntId)];
   const preselected=(existing&&existing.status==="not_hit"&&existing.deductions)?existing.deductions:[];
   ppFoPopup={kind:"cell-deductions",flyer,stuntId,deductions:new Set(preselected)};
   ppFoRenderPopup();
@@ -2714,88 +2780,327 @@ function ppFoClearCell(flyer,stuntId){
 }
 
 function ppFoNewFullout(){
-  if(!confirm("Start a new fullout? This clears all the cells for today."))return;
-  const date=ppFoCurDate||new Date().toISOString().split("T")[0];
-  const fresh={date,cells:{},tumbling:[],updated_at:new Date().toISOString()};
-  ppFoCache[date]=fresh;
+  // Each new fullout gets a unique id (timestamp-based), so multiple per day work.
+  const now=new Date();
+  const id="fo_"+now.getTime();
+  const fresh={
+    id,
+    date: now.toISOString().split("T")[0],
+    startedAt: now.toISOString(),
+    cells: {},
+    tumbling: [],
+    updated_at: now.toISOString()
+  };
+  ppFoCache[id]=fresh;
+  ppFoCurId=id; // jump straight into the new fullout's edit view
   if(curTeamTab==="pp_fullout")renderTeamTab();
-  ppFoCol().doc(date).set(fresh).catch(e=>console.error("Failed to reset fullout:",e));
+  ppFoCol().doc(id).set(fresh).catch(e=>console.error("Failed to create fullout:",e));
+}
+
+async function ppFoDelete(id){
+  if(!ppFoCache[id]) return;
+  delete ppFoCache[id];
+  if(ppFoCurId===id) ppFoCurId=null;
+  if(curTeamTab==="pp_fullout") renderTeamTab();
+  try{await ppFoCol().doc(id).delete();}catch(e){console.error("Failed to delete fullout:",e);}
 }
 
 async function ppFoAddTumbling(name,description){
-  const date=ppFoCurDate||new Date().toISOString().split("T")[0];
-  const cur=ppFoCache[date]||{date,cells:{},tumbling:[]};
+  if(!ppFoCurId) return;
+  const cur=ppFoCache[ppFoCurId];
+  if(!cur) return;
   if(!cur.tumbling)cur.tumbling=[];
   cur.tumbling.push({id:uid(),name:name.trim(),description:description.trim(),value:0.25});
   cur.updated_at=new Date().toISOString();
-  ppFoCache[date]=cur;
+  ppFoCache[ppFoCurId]=cur;
   if(curTeamTab==="pp_fullout"&&!ppFoPopup)renderTeamTab();
-  try{await ppFoCol().doc(date).set(cur);}catch(e){console.error("Failed to save tumbling:",e);}
+  try{await ppFoCol().doc(ppFoCurId).set(cur);}catch(e){console.error("Failed to save tumbling:",e);}
 }
 
 async function ppFoRemoveTumbling(tumblingId){
-  const date=ppFoCurDate||new Date().toISOString().split("T")[0];
-  const cur=ppFoCache[date];
+  if(!ppFoCurId) return;
+  const cur=ppFoCache[ppFoCurId];
   if(!cur||!cur.tumbling)return;
   cur.tumbling=cur.tumbling.filter(t=>t.id!==tumblingId);
   cur.updated_at=new Date().toISOString();
-  ppFoCache[date]=cur;
+  ppFoCache[ppFoCurId]=cur;
   if(curTeamTab==="pp_fullout"&&!ppFoPopup)renderTeamTab();
-  try{await ppFoCol().doc(date).set(cur);}catch(e){console.error("Failed to remove tumbling:",e);}
+  try{await ppFoCol().doc(ppFoCurId).set(cur);}catch(e){console.error("Failed to remove tumbling:",e);}
+}
+
+// ── HISTORY GROUPING / FORMATTING HELPERS ──
+// Group fullouts by ISO week (Mon-Sun), newest first.
+function ppFoGroupByWeek(fullouts){
+  const sorted=fullouts.slice().sort((a,b)=>(b.startedAt||(b.date+"T12:00:00Z")).localeCompare(a.startedAt||(a.date+"T12:00:00Z")));
+  const groups={};
+  sorted.forEach(fo=>{
+    const d=new Date(fo.startedAt||(fo.date+"T12:00:00Z"));
+    const monday=new Date(d);
+    monday.setDate(d.getDate()-((d.getDay()+6)%7)); // shift back to Monday
+    monday.setHours(0,0,0,0);
+    const key=monday.toISOString().split("T")[0];
+    if(!groups[key])groups[key]={monday:monday.toISOString(),fullouts:[]};
+    groups[key].fullouts.push(fo);
+  });
+  return Object.values(groups).sort((a,b)=>b.monday.localeCompare(a.monday));
+}
+
+function ppFoWeekLabel(mondayIso){
+  const today=new Date(); today.setHours(0,0,0,0);
+  const monday=new Date(mondayIso);
+  const diffDays=Math.floor((today-monday)/(24*60*60*1000));
+  if(diffDays<7) return "This Week";
+  if(diffDays<14) return "Last Week";
+  return "Week of "+monday.toLocaleDateString("en-AU",{month:"short",day:"numeric"});
+}
+
+function ppFoFmtTime(fo){
+  const d=new Date(fo.startedAt||(fo.date+"T12:00:00Z"));
+  // E.g. "mon · 4:30pm"
+  return d.toLocaleString("en-AU",{weekday:"short",hour:"numeric",minute:"2-digit",hour12:true}).toLowerCase().replace(",","·");
 }
 
 function renderPPFullout(container){
   startPPListener();
+  // Stale id (e.g. listener purged it) — drop back to tabs view
+  if(ppFoCurId && !ppFoCache[ppFoCurId]) ppFoCurId=null;
+  if(ppFoCurId){
+    renderPPFulloutEdit(container);
+  }else{
+    renderPPFulloutTabs(container);
+  }
+  if(ppFoPopup) ppFoRenderPopup();
+}
+
+// ── TABS VIEW (Overview / per-stunt / Tumbling) ──
+function renderPPFulloutTabs(container){
+  const tabs=[
+    {id:"overview",label:"Overview"},
+    {id:"stunt_pp_s1",label:"Stunt 1"},
+    {id:"stunt_pp_s2",label:"Stunt 2"},
+    {id:"stunt_pp_s3",label:"Stunt 3"},
+    {id:"stunt_pp_pyramid",label:"Pyramid"},
+    {id:"tumbling",label:"Tumbling"}
+  ];
+  let html=`<div style="flex:1;overflow-y:auto;padding:18px 16px 60px;background:linear-gradient(135deg,#fff0f8,#f8f0ff);box-sizing:border-box" class="pp-bigscreen-scope" id="pp-fo-tabs-wrap">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+      <button type="button" data-pp-fo-action="back-home" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--stone);padding:0">&#8592;</button>
+      <div style="flex:1">
+        <div style="font-family:'Bagel Fat One','DM Serif Display',sans-serif;font-size:28px;line-height:1;color:var(--ink)">Fullout Tracker</div>
+      </div>
+      <button type="button" data-pp-fo-action="new-fullout" style="padding:11px 20px;background:linear-gradient(135deg,#e91e8c,#c4559a);color:white;border:none;border-radius:100px;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;letter-spacing:.5px;cursor:pointer;box-shadow:0 4px 14px rgba(196,85,154,.35);-webkit-tap-highlight-color:rgba(255,255,255,.2);touch-action:manipulation">+ new fullout</button>
+    </div>
+    <div style="display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:18px;-webkit-overflow-scrolling:touch">`;
+  tabs.forEach(t=>{
+    const active=ppFoTab===t.id;
+    html+=`<button type="button" data-pp-fo-action="set-tab" data-pp-fo-tab="${t.id}" style="flex-shrink:0;padding:9px 17px;border:1.5px solid ${active?"#c4559a":"var(--border)"};background:${active?"linear-gradient(135deg,#e91e8c,#c4559a)":"white"};color:${active?"white":"var(--stone)"};border-radius:100px;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;letter-spacing:.5px;cursor:pointer;-webkit-tap-highlight-color:rgba(196,85,154,.15);touch-action:manipulation">${esc(t.label)}</button>`;
+  });
+  html+=`</div>
+    <div id="pp-fo-tab-content"></div>
+  </div>
+  <div id="pp-fo-popup-mount"></div>`;
+  container.innerHTML=html;
+
+  const contentEl=document.getElementById("pp-fo-tab-content");
+  if(ppFoTab==="overview") renderPPFulloutOverviewContent(contentEl);
+  else if(ppFoTab.startsWith("stunt_")) renderPPFulloutStuntContent(contentEl, ppFoTab.slice(6));
+  else if(ppFoTab==="tumbling") renderPPFulloutTumblingContent(contentEl);
+
+  // Single delegated handler for tabs view
+  const wrap=document.getElementById("pp-fo-tabs-wrap");
+  if(wrap && !wrap._ppFoTabsDelegated){
+    wrap._ppFoTabsDelegated=true;
+    wrap.addEventListener("click",e=>{
+      const btn=e.target.closest("[data-pp-fo-action]");
+      if(!btn) return;
+      const action=btn.getAttribute("data-pp-fo-action");
+      if(action==="back-home"){ ppSound("tap"); curTeamTab="pp_home"; renderTeamTab(); }
+      else if(action==="new-fullout"){ ppSound("tap"); ppFoNewFullout(); }
+      else if(action==="set-tab"){ ppSound("tap"); ppFoTab=btn.getAttribute("data-pp-fo-tab"); renderTeamTab(); }
+      else if(action==="open-fo"){ ppSound("tap"); ppFoCurId=btn.getAttribute("data-pp-fo-id"); renderTeamTab(); }
+      else if(action==="delete-fo"){
+        const id=btn.getAttribute("data-pp-fo-id");
+        if(confirm("Delete this fullout? This can't be undone.")) ppFoDelete(id);
+      }
+    });
+  }
+}
+
+// "Overview" tab — list every fullout grouped by week, with HIT ZERO badges or total deductions.
+function renderPPFulloutOverviewContent(container){
+  const fullouts=Object.values(ppFoCache);
+  if(!fullouts.length){
+    container.innerHTML=`<div style="text-align:center;padding:60px 20px;color:var(--stone);font-style:italic;font-size:14px">No fullouts yet. Tap "+ new fullout" to start your first one ✨</div>`;
+    return;
+  }
+  const groups=ppFoGroupByWeek(fullouts);
+  let html="";
+  groups.forEach(g=>{
+    html+=`<div style="margin-bottom:24px">
+      <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--stone);margin-bottom:10px;padding-left:6px">${esc(ppFoWeekLabel(g.monday))}</div>
+      <div style="display:flex;flex-direction:column;gap:8px">`;
+    g.fullouts.forEach(fo=>{
+      const ded=ppFoTotalDeduction(fo);
+      const cellCount=fo.cells?Object.values(fo.cells).filter(c=>c.status).length:0;
+      const tumbCount=fo.tumbling?fo.tumbling.length:0;
+      const isHitZero=cellCount>0 && ded===0;
+      const isEmpty=cellCount===0 && tumbCount===0;
+      html+=`<div style="display:flex;align-items:center;gap:12px;background:white;border-radius:14px;padding:14px 18px;box-shadow:0 2px 10px rgba(0,0,0,.05);cursor:pointer;-webkit-tap-highlight-color:rgba(196,85,154,.15);touch-action:manipulation" data-pp-fo-action="open-fo" data-pp-fo-id="${esc(fo.id)}">
+        <div style="flex:1;min-width:0">
+          <div style="font-family:'DM Serif Display',serif;font-size:18px;font-style:italic;color:var(--ink)">${esc(ppFoFmtTime(fo))}</div>
+          <div style="font-size:11px;color:var(--stone);margin-top:2px">${isEmpty?"empty — tap to fill in":cellCount+" "+(cellCount===1?"cell":"cells")+" marked"+(tumbCount?" · "+tumbCount+" tumbling":"")}</div>
+        </div>
+        ${isHitZero
+          ? `<div style="display:flex;align-items:center;gap:6px;padding:7px 14px;background:linear-gradient(135deg,#fef9c4,#fde68a);border:1.5px solid #f0c860;border-radius:100px;font-size:11px;font-weight:700;letter-spacing:1px;color:#7a5f1a;flex-shrink:0">✨ HIT ZERO</div>`
+          : ded>0 ? `<div style="font-family:'DM Serif Display',serif;font-size:24px;font-style:italic;color:#b33a2d;font-weight:600;line-height:1;flex-shrink:0">−${ded.toFixed(2)}</div>` : ""}
+        <button type="button" data-pp-fo-action="delete-fo" data-pp-fo-id="${esc(fo.id)}" style="background:transparent;border:none;cursor:pointer;font-size:14px;color:var(--stone);padding:4px 8px;-webkit-tap-highlight-color:transparent;flex-shrink:0" title="Delete">✕</button>
+      </div>`;
+    });
+    html+=`</div></div>`;
+  });
+  container.innerHTML=html;
+}
+
+// Per-stunt tab — list every fullout's deductions for THIS stunt only.
+function renderPPFulloutStuntContent(container, stuntId){
+  const fullouts=Object.values(ppFoCache);
+  if(!fullouts.length){
+    container.innerHTML=`<div style="text-align:center;padding:60px 20px;color:var(--stone);font-style:italic;font-size:14px">No fullouts yet ✨</div>`;
+    return;
+  }
+  const groups=ppFoGroupByWeek(fullouts);
+  let html="";
+  groups.forEach(g=>{
+    html+=`<div style="margin-bottom:24px">
+      <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--stone);margin-bottom:10px;padding-left:6px">${esc(ppFoWeekLabel(g.monday))}</div>
+      <div style="display:flex;flex-direction:column;gap:8px">`;
+    g.fullouts.forEach(fo=>{
+      // All cells for this stunt (any flyer)
+      const stuntCells=[];
+      if(fo.cells){
+        for(const key in fo.cells){
+          if(key.endsWith("__"+stuntId)){
+            const flyerName=key.split("__")[0];
+            stuntCells.push({cell:fo.cells[key], flyer:flyerName});
+          }
+        }
+      }
+      const stuntDed=Math.round(stuntCells.reduce((s,sc)=>s+ppFoCellTotalDeduction(sc.cell),0)*100)/100;
+      const issueCells=stuntCells.filter(sc=>sc.cell.status==="not_hit"||sc.cell.status==="absent"||sc.cell.status==="missed"||sc.cell.status==="na");
+      const noData=stuntCells.length===0;
+      const isHitZero=stuntCells.length>0 && issueCells.length===0;
+      html+=`<div style="background:white;border-radius:14px;padding:14px 18px;box-shadow:0 2px 10px rgba(0,0,0,.05);cursor:pointer;-webkit-tap-highlight-color:rgba(196,85,154,.15);touch-action:manipulation" data-pp-fo-action="open-fo" data-pp-fo-id="${esc(fo.id)}">
+        <div style="display:flex;align-items:center;gap:12px;${issueCells.length?"margin-bottom:10px":""}">
+          <div style="flex:1;font-family:'DM Serif Display',serif;font-size:17px;font-style:italic;color:var(--ink)">${esc(ppFoFmtTime(fo))}</div>
+          ${noData
+            ? `<div style="font-size:11px;color:var(--stone);font-style:italic">no data</div>`
+            : isHitZero
+              ? `<div style="display:flex;align-items:center;gap:6px;padding:6px 12px;background:linear-gradient(135deg,#fef9c4,#fde68a);border:1.5px solid #f0c860;border-radius:100px;font-size:10px;font-weight:700;letter-spacing:1px;color:#7a5f1a">✨ HIT ZERO</div>`
+              : `<div style="font-family:'DM Serif Display',serif;font-size:20px;font-style:italic;color:#b33a2d;font-weight:600;line-height:1">−${stuntDed.toFixed(2)}</div>`}
+        </div>`;
+      if(issueCells.length){
+        html+=`<div style="display:flex;flex-direction:column;gap:5px">`;
+        issueCells.forEach(sc=>{
+          if(sc.cell.status==="not_hit"){
+            const ded=ppFoCellTotalDeduction(sc.cell);
+            const labels=(sc.cell.deductions||[]).map(id=>ppDeductLabel(id)).join(", ");
+            html+=`<div style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:linear-gradient(135deg,#fff4f2,#ffe7e3);border:1px solid #e8b8b0;border-radius:8px;font-size:12px"><span style="font-family:'DM Serif Display',serif;font-style:italic;color:var(--pink);min-width:60px;text-transform:capitalize">${esc(sc.flyer)}</span><span style="flex:1;color:var(--ink-lt)">${esc(labels)}</span><span style="font-family:'DM Serif Display',serif;font-style:italic;color:#b33a2d;font-weight:600">−${ded.toFixed(2)}</span></div>`;
+          }else{
+            html+=`<div style="display:flex;align-items:center;gap:10px;padding:7px 10px;background:#f4f3f1;border:1px solid #e0dfdc;border-radius:8px;font-size:12px"><span style="font-family:'DM Serif Display',serif;font-style:italic;color:var(--pink);min-width:60px;text-transform:capitalize">${esc(sc.flyer)}</span><span style="flex:1;color:var(--stone);font-weight:600;letter-spacing:.5px;font-size:11px">${esc(ppNoperfLabel(sc.cell.status))}</span></div>`;
+          }
+        });
+        html+=`</div>`;
+      }
+      html+=`</div>`;
+    });
+    html+=`</div></div>`;
+  });
+  container.innerHTML=html;
+}
+
+// Tumbling tab — flat list of all tumbling deductions across all fullouts.
+function renderPPFulloutTumblingContent(container){
+  const items=[];
+  Object.values(ppFoCache).forEach(fo=>{
+    (fo.tumbling||[]).forEach(t=>items.push({...t,fo}));
+  });
+  if(!items.length){
+    container.innerHTML=`<div style="text-align:center;padding:60px 20px;color:var(--stone);font-style:italic;font-size:14px">No tumbling deductions yet ✨</div>`;
+    return;
+  }
+  // Group by week (using the parent fullout's startedAt/date)
+  const sorted=items.sort((a,b)=>(b.fo.startedAt||(b.fo.date+"T12:00:00Z")).localeCompare(a.fo.startedAt||(a.fo.date+"T12:00:00Z")));
+  const groups={};
+  sorted.forEach(item=>{
+    const d=new Date(item.fo.startedAt||(item.fo.date+"T12:00:00Z"));
+    const monday=new Date(d);
+    monday.setDate(d.getDate()-((d.getDay()+6)%7));
+    monday.setHours(0,0,0,0);
+    const key=monday.toISOString().split("T")[0];
+    if(!groups[key])groups[key]={monday:monday.toISOString(),items:[]};
+    groups[key].items.push(item);
+  });
+  const sortedGroups=Object.values(groups).sort((a,b)=>b.monday.localeCompare(a.monday));
+  let html="";
+  sortedGroups.forEach(g=>{
+    const weekTotal=Math.round(g.items.reduce((s,i)=>s+(i.value||0.25),0)*100)/100;
+    html+=`<div style="margin-bottom:24px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:0 6px">
+        <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--stone)">${esc(ppFoWeekLabel(g.monday))}</div>
+        <div style="font-family:'DM Serif Display',serif;font-size:14px;font-style:italic;color:#b33a2d;font-weight:600">−${weekTotal.toFixed(2)}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:6px">`;
+    g.items.forEach(item=>{
+      html+=`<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;background:white;border-radius:10px;box-shadow:0 1px 6px rgba(0,0,0,.04);cursor:pointer;-webkit-tap-highlight-color:rgba(196,85,154,.15)" data-pp-fo-action="open-fo" data-pp-fo-id="${esc(item.fo.id)}">
+        <div style="font-family:'DM Serif Display',serif;font-size:16px;font-style:italic;color:var(--pink);min-width:80px;text-transform:capitalize">${esc(item.name||"—")}</div>
+        <div style="flex:1;font-size:12.5px;color:var(--ink-lt);line-height:1.3">${esc(item.description||"")}</div>
+        <div style="font-size:10px;color:var(--stone)">${esc(ppFoFmtTime(item.fo))}</div>
+        <div style="font-family:'DM Serif Display',serif;font-size:16px;font-style:italic;color:#b33a2d;font-weight:600">−${(item.value||0.25).toFixed(2)}</div>
+      </div>`;
+    });
+    html+=`</div></div>`;
+  });
+  container.innerHTML=html;
+}
+
+// EDIT VIEW — the existing fullout grid editor, now per-id with back-to-tabs nav.
+function renderPPFulloutEdit(container){
   const team=getTeam("pink_panthers");
   const stunts=team.ppStunts||[];
-  if(!ppFoCurDate)ppFoCurDate=new Date().toISOString().split("T")[0];
   const fo=ppFoGetCurrent();
+  if(!fo){ ppFoCurId=null; renderTeamTab(); return; }
   const flyers=ppAllFlyers();
   const totalDed=ppFoTotalDeduction(fo);
 
   let html=`<div style="flex:1;overflow-y:auto;padding:18px 16px 60px;background:linear-gradient(135deg,#fff0f8,#f8f0ff);box-sizing:border-box" class="pp-bigscreen-scope" id="pp-fullout-wrap">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-      <button type="button" data-pp-fo-action="back" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--stone);padding:0">&#8592;</button>
-      <div style="flex:1">
-        <div style="font-family:'Bagel Fat One','DM Serif Display',sans-serif;font-size:28px;line-height:1;color:var(--ink)">Fullout</div>
-        <div style="font-size:10px;color:var(--stone);letter-spacing:1.5px;text-transform:uppercase;margin-top:2px">${esc(fmtShort(ppFoCurDate))}</div>
+      <button type="button" data-pp-fo-action="back-tabs" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--stone);padding:0">&#8592;</button>
+      <div style="flex:1;min-width:0">
+        <div style="font-family:'Bagel Fat One','DM Serif Display',sans-serif;font-size:26px;line-height:1;color:var(--ink)">Fullout</div>
+        <div style="font-size:10px;color:var(--stone);letter-spacing:1.5px;text-transform:uppercase;margin-top:3px">${esc(ppFoFmtTime(fo))}</div>
       </div>
-      <button type="button" data-pp-fo-action="new-fullout" style="padding:8px 14px;background:white;border:1.5px solid var(--border);border-radius:100px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:600;color:var(--stone);cursor:pointer;-webkit-tap-highlight-color:rgba(196,85,154,.15);touch-action:manipulation">↻ new fullout</button>
     </div>
-
-    <!-- TOTAL DEDUCTION SUMMARY -->
     <div style="background:white;border-radius:14px;padding:14px 18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 12px rgba(0,0,0,.05)">
       <div style="font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--stone)">total deductions</div>
       <div style="font-family:'DM Serif Display',serif;font-size:34px;font-style:italic;color:${totalDed>0?"#b33a2d":"var(--stone)"};line-height:1">${totalDed>0?"−"+totalDed.toFixed(2):"0.00"}</div>
     </div>
-
-    <!-- COLUMN HEADERS (sticky) -->
-    <div class="pp-fo-grid" style="margin-bottom:10px">
-      <div></div>`;
+    <div class="pp-fo-grid" style="margin-bottom:10px"><div></div>`;
   stunts.forEach(s=>{html+=`<div class="pp-fo-colhd">${esc(s.label)}</div>`;});
-  html+=`</div>
-
-    <!-- FLYER ROWS -->`;
+  html+=`</div>`;
   flyers.forEach(flyer=>{
     html+=`<div class="pp-fo-grid" style="margin-bottom:10px">
       <div class="pp-fo-flyer">${esc(flyer)}</div>`;
     stunts.forEach(stunt=>{
       const inStunt=ppFlyerInStunt(flyer,stunt);
-      if(!inStunt){
-        html+=`<div class="pp-fo-cell empty"></div>`;
-        return;
-      }
-      const cell=fo.cells[ppFoCellKey(flyer,stunt.id)];
+      if(!inStunt){ html+=`<div class="pp-fo-cell empty"></div>`; return; }
+      const cell=fo.cells&&fo.cells[ppFoCellKey(flyer,stunt.id)];
       if(!cell){
-        // unset — show two action buttons
         html+=`<div class="pp-fo-cell">
           <button type="button" class="pp-fo-hit-btn" data-pp-fo-action="hit" data-pp-fo-flyer="${esc(flyer)}" data-pp-fo-stunt="${esc(stunt.id)}">HIT! 🎉</button>
           <button type="button" class="pp-fo-miss-btn" data-pp-fo-action="miss" data-pp-fo-flyer="${esc(flyer)}" data-pp-fo-stunt="${esc(stunt.id)}">✗ MISS</button>
         </div>`;
       }else{
-        // set — show result with a small clear button
-        const status=cell.status;
-        let inner="";
+        const status=cell.status; let inner="";
         if(status==="hit"){
           inner=`<div class="pp-fo-result-crown">👑</div><div class="pp-fo-result-hit-lbl">hit</div>`;
         }else if(status==="not_hit"){
@@ -2803,7 +3108,6 @@ function renderPPFullout(container){
           const tags=(cell.deductions||[]).map(id=>`<span class="pp-fo-result-miss-tag">${esc(ppDeductLabel(id))}</span>`).join("");
           inner=`<div class="pp-fo-result-miss-val">−${ded.toFixed(2)}</div>${tags?`<div class="pp-fo-result-miss-tags">${tags}</div>`:""}`;
         }else{
-          // absent / missed / na
           const opt=PP_NOPERF_OPTIONS.find(o=>o.id===status);
           const emoji=opt?opt.emoji:"—";
           inner=`<div class="pp-fo-result-noperf-emoji">${emoji}</div><div class="pp-fo-result-noperf">${esc(ppNoperfLabel(status))}</div>`;
@@ -2816,56 +3120,52 @@ function renderPPFullout(container){
     });
     html+=`</div>`;
   });
-  // Tumbling deductions section (below the flyer grid)
+  // Tumbling deductions section
   const tumb=fo.tumbling||[];
   const tumbTotal=tumb.reduce((a,t)=>a+(t.value||0.25),0);
-  html+=`
-    <div style="margin-top:24px;background:white;border-radius:14px;padding:16px 18px;box-shadow:0 2px 12px rgba(0,0,0,.05)">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${tumb.length?"12px":"6px"}">
-        <div>
-          <div style="font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--stone)">tumbling deductions</div>
-          ${tumb.length?`<div style="font-family:'DM Serif Display',serif;font-size:20px;font-style:italic;color:#b33a2d;line-height:1;margin-top:4px">−${tumbTotal.toFixed(2)}</div>`:`<div style="font-size:11px;color:var(--stone);font-style:italic;margin-top:4px">no tumbling deductions yet</div>`}
-        </div>
-        <button type="button" data-pp-fo-action="add-tumbling" style="padding:8px 14px;background:linear-gradient(135deg,#e91e8c,#c4559a);border:none;border-radius:100px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;color:white;cursor:pointer;box-shadow:0 3px 10px rgba(196,85,154,.3);-webkit-tap-highlight-color:rgba(255,255,255,.2);touch-action:manipulation">+ add</button>
+  html+=`<div style="margin-top:24px;background:white;border-radius:14px;padding:16px 18px;box-shadow:0 2px 12px rgba(0,0,0,.05)">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${tumb.length?"12px":"6px"}">
+      <div>
+        <div style="font-size:9px;font-weight:600;letter-spacing:2px;text-transform:uppercase;color:var(--stone)">tumbling deductions</div>
+        ${tumb.length?`<div style="font-family:'DM Serif Display',serif;font-size:20px;font-style:italic;color:#b33a2d;line-height:1;margin-top:4px">−${tumbTotal.toFixed(2)}</div>`:`<div style="font-size:11px;color:var(--stone);font-style:italic;margin-top:4px">no tumbling deductions yet</div>`}
       </div>
-      ${tumb.length?`<div style="display:flex;flex-direction:column;gap:6px">${tumb.map(t=>`
-        <div style="display:flex;align-items:center;gap:10px;padding:9px 11px;background:linear-gradient(135deg,#fff4f2,#ffe7e3);border:1px solid #e8b8b0;border-radius:9px">
-          <div style="font-family:'DM Serif Display',serif;font-size:16px;font-style:italic;color:var(--pink);min-width:80px">${esc(t.name||"—")}</div>
-          <div style="flex:1;font-size:12.5px;color:var(--ink-lt);line-height:1.3">${esc(t.description||"")}</div>
-          <div style="font-family:'DM Serif Display',serif;font-size:16px;font-style:italic;color:#b33a2d;font-weight:600">−${(t.value||0.25).toFixed(2)}</div>
-          <button type="button" data-pp-fo-action="remove-tumbling" data-pp-fo-tumbling-id="${esc(t.id)}" style="background:rgba(255,255,255,.7);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:var(--stone);line-height:1;-webkit-tap-highlight-color:transparent" title="Remove">✕</button>
-        </div>`).join("")}</div>`:""}
+      <button type="button" data-pp-fo-action="add-tumbling" style="padding:8px 14px;background:linear-gradient(135deg,#e91e8c,#c4559a);border:none;border-radius:100px;font-family:'DM Sans',sans-serif;font-size:11px;font-weight:700;letter-spacing:.5px;color:white;cursor:pointer;box-shadow:0 3px 10px rgba(196,85,154,.3);-webkit-tap-highlight-color:rgba(255,255,255,.2);touch-action:manipulation">+ add</button>
     </div>
+    ${tumb.length?`<div style="display:flex;flex-direction:column;gap:6px">${tumb.map(t=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 11px;background:linear-gradient(135deg,#fff4f2,#ffe7e3);border:1px solid #e8b8b0;border-radius:9px">
+        <div style="font-family:'DM Serif Display',serif;font-size:16px;font-style:italic;color:var(--pink);min-width:80px">${esc(t.name||"—")}</div>
+        <div style="flex:1;font-size:12.5px;color:var(--ink-lt);line-height:1.3">${esc(t.description||"")}</div>
+        <div style="font-family:'DM Serif Display',serif;font-size:16px;font-style:italic;color:#b33a2d;font-weight:600">−${(t.value||0.25).toFixed(2)}</div>
+        <button type="button" data-pp-fo-action="remove-tumbling" data-pp-fo-tumbling-id="${esc(t.id)}" style="background:rgba(255,255,255,.7);border:1px solid var(--border);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:11px;color:var(--stone);line-height:1;-webkit-tap-highlight-color:transparent" title="Remove">✕</button>
+      </div>`).join("")}</div>`:""}
+  </div>
   </div>
   <div id="pp-fo-popup-mount"></div>`;
   container.innerHTML=html;
 
-  // Event delegation for the grid
+  // Event delegation for the edit grid
   const wrap=document.getElementById("pp-fullout-wrap");
-  if(wrap&&!wrap._ppFoDelegated){
-    wrap._ppFoDelegated=true;
+  if(wrap && !wrap._ppFoEditDelegated){
+    wrap._ppFoEditDelegated=true;
     wrap.addEventListener("click",e=>{
       const btn=e.target.closest("[data-pp-fo-action]");
-      if(!btn)return;
+      if(!btn) return;
       e.stopPropagation();
       const action=btn.getAttribute("data-pp-fo-action");
       const flyer=btn.getAttribute("data-pp-fo-flyer");
       const stunt=btn.getAttribute("data-pp-fo-stunt");
-      if(action==="back"){curTeamTab="pp_home";renderTeamTab();}
-      else if(action==="new-fullout")ppFoNewFullout();
-      else if(action==="hit")ppFoOnHit(flyer,stunt);
-      else if(action==="miss")ppFoOnMiss(flyer,stunt);
-      else if(action==="clear")ppFoClearCell(flyer,stunt);
-      else if(action==="add-tumbling"){ppFoPopup={kind:"tumbling-add"};ppFoRenderPopup();}
+      // Back from edit goes to the tabs view, not all the way to PP home.
+      if(action==="back-tabs"){ ppSound("tap"); ppFoCurId=null; renderTeamTab(); }
+      else if(action==="hit") ppFoOnHit(flyer,stunt);
+      else if(action==="miss") ppFoOnMiss(flyer,stunt);
+      else if(action==="clear") ppFoClearCell(flyer,stunt);
+      else if(action==="add-tumbling"){ ppFoPopup={kind:"tumbling-add"}; ppFoRenderPopup(); }
       else if(action==="remove-tumbling"){
         const tid=btn.getAttribute("data-pp-fo-tumbling-id");
-        if(confirm("Remove this tumbling deduction?"))ppFoRemoveTumbling(tid);
+        if(confirm("Remove this tumbling deduction?")) ppFoRemoveTumbling(tid);
       }
     });
   }
-
-  // Render the popup if open (it lives in its own mount so it survives grid re-renders)
-  if(ppFoPopup)ppFoRenderPopup();
 }
 
 function ppFoRenderPopup(){
