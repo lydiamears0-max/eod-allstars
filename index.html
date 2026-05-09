@@ -280,6 +280,11 @@ body{font-family:'DM Sans',sans-serif;color:var(--ink);}
   color: #b8c4d8;
   text-shadow: 0 0 6px rgba(180, 200, 230, 0.8), 0 0 12px rgba(255, 255, 255, 0.4);
 }
+/* Assassin/sniper-target sparkle variant — Pink Assassins aesthetic */
+.pp-sparkle-assassin .pp-sparkle{
+  color: #b91c1c;
+  text-shadow: 0 0 4px rgba(185, 28, 28, 0.45), 0 0 8px rgba(0, 0, 0, 0.15);
+}
 
 /* The big italic wordmark */
 .pp-wordmark{
@@ -905,6 +910,7 @@ const TEAMS=[
    useStuntSetup:true,
    hasHouses:false,
    sparkleStyle:"silver", // pink + silver/diamond aesthetic
+   taglineEmoji:"💎",
    roster:["Lylah","Lilah","Willow","Armani","Noa","Teuila","Evalina","Ellie","Addison"],
    ppStunts:[
      {id:"td_s1",label:"Stunt 1",desc:"",groups:[
@@ -952,6 +958,7 @@ const TEAMS=[
    useStuntSetup:true,
    hasHouses:true,
    sparkleStyle:"pink",
+   taglineEmoji:"💖",
    roster:["Paris","Addi","Amarlie","Azarlah","Caitie","Elly","Emma","Farrah","Freyah","Jess","Isla","Amarni","Lilah","Nat","Ruby A","Ruby B","Ruby H","Sienna","Ivy","Talia","Taylor"],
    ppStunts:[
      {id:"pp_s1",label:"Stunt 1",desc:"Full up switch up",groups:[
@@ -983,6 +990,44 @@ const TEAMS=[
      ]}
    ],
    stunts:[{id:"stunt1",label:"Main Stunt",athletes:["Ruby","Freyah","Amarni","Emma","Sienna"]}],
+   templates:{tuesday:{id:"tuesday",display:"Tuesday",time:"5:00 pm - 6:45 pm",duration:105},thursday:{id:"thursday",display:"Thursday",time:"6:00 pm - 7:30 pm",duration:90}}},
+  {id:"pink_assassins",name:"Pink Assassins",abbr:"PA",logo:"logo-pink-assassins.png",
+   noClassPlan:true,
+   useStuntSetup:true,
+   hasHouses:true,
+   sparkleStyle:"assassin",
+   taglineEmoji:"🥷🏼",
+   roster:["Mia U","Mikayla","Airlie","Ada","Adelaide","Phoenix","Ruby","Tilly","Maddi","Charlotte","Ebony","Ella","Felicity","Ella-Rae","Peyton","Gracie","Amayah","Sophie","Tasmin","Quinn","Sophia","Mia S","Esme","Jema","Ivy","Kendra","Amarni","Alera"],
+   ppStunts:[
+     {id:"pa_s1",label:"Stunt 1",desc:"Half up, Pop Down",groups:[
+       {id:"pa_s1_mikayla",name:"Mikayla"},
+       {id:"pa_s1_ada",name:"Ada"},
+       {id:"pa_s1_mia",name:"Mia"},
+       {id:"pa_s1_airlie",name:"Airlie"},
+       {id:"pa_s1_phoenix",name:"Phoenix"},
+       {id:"pa_s1_addi",name:"Addi"},
+       {id:"pa_s1_ruby",name:"Ruby"}
+     ]},
+     {id:"pa_s2",label:"Stunt 2",desc:"Elite Stunt",groups:[
+       {id:"pa_s2_mikayla",name:"Mikayla"},
+       {id:"pa_s2_ada",name:"Ada"},
+       {id:"pa_s2_mia",name:"Mia"},
+       {id:"pa_s2_airlie",name:"Airlie"},
+       {id:"pa_s2_phoenix",name:"Phoenix"},
+       {id:"pa_s2_addi",name:"Addi"},
+       {id:"pa_s2_ruby",name:"Ruby"}
+     ]},
+     {id:"pa_pyramid",label:"Pyramid",desc:"",groups:[
+       {id:"pa_pyr_mikayla",name:"Mikayla"},
+       {id:"pa_pyr_ada",name:"Ada"},
+       {id:"pa_pyr_mia",name:"Mia"},
+       {id:"pa_pyr_airlie",name:"Airlie"},
+       {id:"pa_pyr_phoenix",name:"Phoenix"},
+       {id:"pa_pyr_addi",name:"Addi"},
+       {id:"pa_pyr_ruby",name:"Ruby"}
+     ]}
+   ],
+   stunts:[{id:"stunt1",label:"Main Stunt",athletes:["Mikayla","Ada","Mia","Airlie","Phoenix","Addi","Ruby"]},{id:"stunt2",label:"2nd Stunt",athletes:["Mikayla","Ada","Mia","Airlie","Phoenix","Addi","Ruby"]}],
    templates:{tuesday:{id:"tuesday",display:"Tuesday",time:"5:00 pm - 6:45 pm",duration:105},thursday:{id:"thursday",display:"Thursday",time:"6:00 pm - 7:30 pm",duration:90}}},
   {id:"miss_purrfect",name:"Miss Purrfect",abbr:"MP",logo:"logo-miss-purrfect.png",tossesLabel:"Opening",
    stunts:[
@@ -1971,10 +2016,14 @@ function renderPPHome(container){
   const housePts = (ppHousesCache.red||0)+(ppHousesCache.green||0)+(ppHousesCache.blue||0)+(ppHousesCache.yellow||0);
 
   // Build sparkle decorations (random positions/timings)
-  // For the "silver" sparkle style (Tiny Diamonds etc.), mix in diamond glyphs.
-  const sparkleSyms = team.sparkleStyle === "silver"
-    ? ["✦","✧","◆","♦","✩","✺"]
-    : ["✦","✧","٭","✩","★"];
+  // Each team can declare a sparkleStyle for theme-appropriate glyphs:
+  //   "silver"   → diamonds (Tiny Diamonds aesthetic)
+  //   "assassin" → sniper targets / crosshairs (Pink Assassins aesthetic)
+  //   default    → pink stars
+  const sparkleSyms =
+    team.sparkleStyle === "silver"   ? ["✦","✧","◆","♦","✩","✺"] :
+    team.sparkleStyle === "assassin" ? ["⊙","◎","◉","⌖","✛","🎯"] :
+                                       ["✦","✧","٭","✩","★"];
   let sparkles = "";
   for(let i=0;i<14;i++){
     const left = Math.floor(Math.random()*95);
@@ -1984,11 +2033,19 @@ function renderPPHome(container){
     const dx = (Math.random()*80-40).toFixed(0);
     const dy = (-30 - Math.random()*70).toFixed(0);
     const sym = sparkleSyms[Math.floor(Math.random()*sparkleSyms.length)];
-    sparkles += `<span class="pp-sparkle" style="left:${left}%;top:${top}%;--dx:${dx}px;--dy:${dy}px;--dur:${dur}s;--delay:${delay}s;font-size:${10+Math.random()*10}px">${sym}</span>`;
+    // Assassin targets are slightly larger (12-26px) so the bullseyes/crosshairs read clearly
+    const sizeMin = team.sparkleStyle === "assassin" ? 12 : 10;
+    const sizeRange = team.sparkleStyle === "assassin" ? 14 : 10;
+    sparkles += `<span class="pp-sparkle" style="left:${left}%;top:${top}%;--dx:${dx}px;--dy:${dy}px;--dur:${dur}s;--delay:${delay}s;font-size:${sizeMin+Math.random()*sizeRange}px">${sym}</span>`;
   }
 
+  // Map sparkleStyle → CSS class (each style gets its own color/glow treatment)
+  const sparkleClass = team.sparkleStyle === "silver"   ? "pp-sparkle-silver"
+                     : team.sparkleStyle === "assassin" ? "pp-sparkle-assassin"
+                     : "";
+
   let html = `
-  <div class="pp-bigscreen-scope pp-gradient-bg ${team.sparkleStyle==="silver"?"pp-sparkle-silver":""}" style="position:relative;flex:1;overflow-y:auto;padding:20px 18px 30px;box-sizing:border-box" id="pp-home-wrap">
+  <div class="pp-bigscreen-scope pp-gradient-bg ${sparkleClass}" style="position:relative;flex:1;overflow-y:auto;padding:20px 18px 30px;box-sizing:border-box" id="pp-home-wrap">
     ${sparkles}
     <button type="button" class="pp-mute-btn" data-pp-home-action="mute" title="${ppMuted?"Unmute":"Mute"}">${ppMuted?"🔇":"🔊"}</button>
 
@@ -1997,7 +2054,7 @@ function renderPPHome(container){
         ? `<img class="pp-team-logo" src="${esc(team.logo)}" alt="${esc(team.name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/>
            <div class="pp-wordmark" style="display:none">${esc(team.name)}</div>`
         : `<div class="pp-wordmark">${esc(team.name)}</div>`}
-      <div class="pp-tagline">${["let's go " + team.name.toLowerCase() + " 💖","today's the day ✨","one stunt at a time","slay slay slay"][Math.floor(Math.random()*4)]}</div>
+      <div class="pp-tagline">${["let's go " + team.name.toLowerCase() + " " + (team.taglineEmoji||"💖"),"today's the day ✨","one stunt at a time","slay slay slay"][Math.floor(Math.random()*4)]}</div>
     </div>
 
     <!-- Primary tiles -->
