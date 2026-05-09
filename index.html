@@ -275,6 +275,11 @@ body{font-family:'DM Sans',sans-serif;color:var(--ink);}
   animation: ppSparkleDrift var(--dur,7s) ease-in-out infinite;
   animation-delay: var(--delay,0s);
 }
+/* Silver/diamond sparkle variant — applied via the team's sparkleStyle config */
+.pp-sparkle-silver .pp-sparkle{
+  color: #b8c4d8;
+  text-shadow: 0 0 6px rgba(180, 200, 230, 0.8), 0 0 12px rgba(255, 255, 255, 0.4);
+}
 
 /* The big italic wordmark */
 .pp-wordmark{
@@ -288,6 +293,17 @@ body{font-family:'DM Sans',sans-serif;color:var(--ink);}
   color: transparent; -webkit-text-fill-color: transparent;
   letter-spacing: 0;
 }
+/* Team logo image (replaces the text wordmark when a team has a logo file). */
+.pp-team-logo{
+  display: block;
+  height: 96px;
+  max-width: 80%;
+  width: auto;
+  object-fit: contain;
+  margin: 0 auto 4px;
+  filter: drop-shadow(0 4px 12px rgba(196, 85, 154, 0.18));
+}
+.pp-bigscreen-scope .pp-team-logo{ height: 144px; }
 .pp-tagline{
   font-family: 'Caveat', cursive;
   text-align: center;
@@ -803,7 +819,24 @@ addWeeks("T4",new Date("2026-10-05"),10,"W1"); // T4 W1-W10 ends Dec 13
 // ── TEAMS ──
 const TEAMS=[
   {id:"tiny_diamonds",name:"Tiny Diamonds",abbr:"TD",logo:"logo-tiny-diamonds.png",
-   stunts:[{id:"stunt1",label:"Main Stunt",athletes:["Zara","Lily","Mia","Sophie","Grace","Ella","Chloe"]},{id:"stunt2",label:"2nd Stunt",athletes:["Zara","Lily","Mia","Sophie","Grace","Ella","Chloe"]}],
+   noClassPlan:true,
+   useStuntSetup:true,
+   hasHouses:false,
+   sparkleStyle:"silver", // pink + silver/diamond aesthetic
+   roster:["Lylah","Lilah","Willow","Armani","Noa","Teuila","Evalina","Ellie","Addison"],
+   ppStunts:[
+     {id:"td_s1",label:"Stunt 1",desc:"",groups:[
+       {id:"td_s1_noa",name:"Noa"},
+       {id:"td_s1_evalina",name:"Evalina"},
+       {id:"td_s1_ellie",name:"Ellie"}
+     ]},
+     {id:"td_s2",label:"Stunt 2",desc:"",groups:[
+       {id:"td_s2_noa",name:"Noa"},
+       {id:"td_s2_evalina",name:"Evalina"},
+       {id:"td_s2_ellie",name:"Ellie"}
+     ]}
+   ],
+   stunts:[{id:"stunt1",label:"Main Stunt",athletes:["Noa","Evalina","Ellie"]},{id:"stunt2",label:"2nd Stunt",athletes:["Noa","Evalina","Ellie"]}],
    templates:{tuesday:{id:"tuesday",display:"Tuesday",time:"5:00 pm - 6:45 pm",duration:105},thursday:{id:"thursday",display:"Thursday",time:"6:00 pm - 7:30 pm",duration:90}}},
   {id:"lil_leopards",name:"Lil Leopards",abbr:"LL",logo:"logo-lil-leopards.png",
    stunts:[{id:"stunt1",label:"Main Stunt",athletes:["Ava","Ruby","Isla","Freya","Poppy","Daisy","Rose"]},{id:"stunt2",label:"2nd Stunt",athletes:["Ava","Ruby","Isla","Freya","Poppy","Daisy","Rose"]}],
@@ -834,6 +867,10 @@ const TEAMS=[
    templates:{monday:{id:"monday",display:"Monday",time:"4:00 pm - 5:45 pm",duration:105},wednesday:{id:"wednesday",display:"Wednesday",time:"4:00 pm - 6:00 pm",duration:120}}},
   {id:"pink_panthers",name:"Pink Panthers",abbr:"PP",logo:"logo-pink-panthers.png",
    noClassPlan:true,
+   useStuntSetup:true,
+   hasHouses:true,
+   sparkleStyle:"pink",
+   roster:["Paris","Addi","Amarlie","Azarlah","Caitie","Elly","Emma","Farrah","Freyah","Jess","Isla","Amarni","Lilah","Nat","Ruby A","Ruby B","Ruby H","Sienna","Ivy","Talia","Taylor"],
    ppStunts:[
      {id:"pp_s1",label:"Stunt 1",desc:"Full up switch up",groups:[
        {id:"pp_s1_ruby",name:"Ruby"},
@@ -1068,11 +1105,11 @@ function openTeam(teamId){
   document.querySelectorAll(".team-nav-btn").forEach(b=>{if(b.textContent==="class plans")b.style.display=t.noClassPlan?"none":"block";});
   // Pink Kitties: jump straight to coordination
   if(teamId==="pink_kitties"){curTeamTab="coord";document.querySelectorAll(".team-nav-btn").forEach(b=>b.classList.remove("active"));const coordBtn=document.querySelector("#coord-nav-btn-wrap .team-nav-btn");if(coordBtn)coordBtn.classList.add("active");}
-  // Pink Panthers: jump straight to the new tile home and hide the sidebar entirely
-  if(teamId==="pink_panthers"){curTeamTab="pp_home";}
-  // Hide/show the team sidebar based on team
+  // Teams using the new tile-based stunt setup (Pink Panthers, Tiny Diamonds, ...) jump straight
+  // to the home tile screen and hide the legacy sidebar entirely.
+  if(t.useStuntSetup){curTeamTab="pp_home";}
   const teamNav=document.getElementById("team-nav");
-  if(teamNav)teamNav.style.display=teamId==="pink_panthers"?"none":"";
+  if(teamNav)teamNav.style.display=t.useStuntSetup?"none":"";
   showScreen("team-view");renderTeamTab();
 }
 function goBackToTeam(){stopSectionTimer();showScreen("team-view");renderTeamTab();}
@@ -1697,10 +1734,9 @@ let ppHousesCache={red:0,green:0,blue:0,yellow:0,updated_at:null};
 let ppStuntTrainingTab="pp_s1"; // currently-active tab on the Stunt Training sub-page
 
 // Pink Panthers full team roster (used for the Star Chart). Keep the casing they want shown.
-const PP_ROSTER=[
-  "Paris","Addi","Amarlie","Azarlah","Caitie","Elly","Emma","Farrah","Freyah","Jess","Isla",
-  "Amarni","Lilah","Nat","Ruby A","Ruby B","Ruby H","Sienna","Ivy","Talia","Taylor"
-];
+// Drop the rosterFor() constant — each team's roster lives on its team config object.
+// Use rosterFor() to get the current team's roster (defaults to []).
+function rosterFor(teamId){const t=getTeam(teamId||curTeamId);return (t&&t.roster)||[];}
 function ppAthleteId(name){return name.toLowerCase().replace(/[^a-z0-9]+/g,"_");}
 
 // Deduction & non-performance options shown in the MISS popup
@@ -1729,26 +1765,36 @@ function ppDeductLabel(id){
 }
 function ppNoperfLabel(id){const o=PP_NOPERF_OPTIONS.find(x=>x.id===id);return o?o.label.toUpperCase():id.toUpperCase();}
 
-function ppCol(){return db.collection("teams").doc("pink_panthers").collection("stunt_sessions");}
-function ppNotesCol(){return db.collection("teams").doc("pink_panthers").collection("stunt_notes");}
-function ppFoCol(){return db.collection("teams").doc("pink_panthers").collection("pp_fullouts");}
-function ppStarsCol(){return db.collection("teams").doc("pink_panthers").collection("pp_stars");}
-function ppHousesDoc(){return db.collection("teams").doc("pink_panthers").collection("pp_misc").doc("houses");}
+function ppCol(teamId){teamId=teamId||curTeamId||"pink_panthers";return db.collection("teams").doc(teamId).collection("stunt_sessions");}
+function ppNotesCol(teamId){teamId=teamId||curTeamId||"pink_panthers";return db.collection("teams").doc(teamId).collection("stunt_notes");}
+function ppFoCol(teamId){teamId=teamId||curTeamId||"pink_panthers";return db.collection("teams").doc(teamId).collection("pp_fullouts");}
+function ppStarsCol(teamId){teamId=teamId||curTeamId||"pink_panthers";return db.collection("teams").doc(teamId).collection("pp_stars");}
+function ppHousesDoc(teamId){teamId=teamId||curTeamId||"pink_panthers";return db.collection("teams").doc(teamId).collection("pp_misc").doc("houses");}
 function ppNotesCache(){return window._ppNotes||{};}
 
+let _ppListenerTeamId=null;
+let _ppUnsubscribers=[];
 function startPPListener(){
-  if(ppListener)return;
-  ppListener=ppCol().orderBy("date","desc").limit(200).onSnapshot(snap=>{
+  // Re-attach if the team changed (or first time)
+  if(_ppListenerTeamId === curTeamId && _ppUnsubscribers.length) return;
+  // Tear down old listeners and clear caches before swapping teams
+  _ppUnsubscribers.forEach(unsub=>{ try{unsub();}catch(e){} });
+  _ppUnsubscribers=[];
+  ppCache={}; ppFoCache={}; ppStarsCache={}; ppHousesCache={red:0,green:0,blue:0,yellow:0,updated_at:null};
+  _ppListenerTeamId = curTeamId;
+  ppListener = "active"; // legacy flag
+
+  _ppUnsubscribers.push(ppCol().orderBy("date","desc").limit(200).onSnapshot(snap=>{
     ppCache={};
     snap.docs.forEach(d=>{const s=d.data();const key=s.stuntId+"_"+s.groupId;if(!ppCache[key])ppCache[key]=[];ppCache[key].push(s);});
     if(curTeamTab==="pp_team_stats")renderTeamTab();
     else if(curTeamTab==="pp_home"){updatePPSessionPulse();}
-  });
-  ppNotesCol().onSnapshot(snap=>{
+  }));
+  _ppUnsubscribers.push(ppNotesCol().onSnapshot(snap=>{
     window._ppNotes={};snap.docs.forEach(d=>{window._ppNotes[d.id]=d.data();});
     if(curTeamTab==="pp_session")renderTeamTab();
-  });
-  ppFoCol().limit(200).onSnapshot(snap=>{
+  }));
+  _ppUnsubscribers.push(ppFoCol().limit(200).onSnapshot(snap=>{
     ppFoCache={};
     snap.docs.forEach(d=>{
       const f=d.data();
@@ -1757,20 +1803,19 @@ function startPPListener(){
       if(!f.startedAt && f.date) f.startedAt = f.date + "T12:00:00.000Z";
       ppFoCache[f.id] = f;
     });
-    // Only refresh the fullout screen if the popup is NOT open — otherwise we'd interrupt the user mid-selection.
     if(curTeamTab==="pp_fullout"&&!ppFoPopup)renderTeamTab();
-    if(curTeamTab==="pp_team_stats")renderTeamTab(); // fullout filter pulls from this cache
-    if(curTeamTab==="pp_home")renderTeamTab(); // tile sub-text shows fullout count today
-  });
-  ppStarsCol().onSnapshot(snap=>{
+    if(curTeamTab==="pp_team_stats")renderTeamTab();
+    if(curTeamTab==="pp_home")renderTeamTab();
+  }));
+  _ppUnsubscribers.push(ppStarsCol().onSnapshot(snap=>{
     ppStarsCache={};
     snap.docs.forEach(d=>{ppStarsCache[d.id]=d.data();});
     if(curTeamTab==="pp_star_chart")renderTeamTab();
-  });
-  ppHousesDoc().onSnapshot(d=>{
+  }));
+  _ppUnsubscribers.push(ppHousesDoc().onSnapshot(d=>{
     if(d.exists){const data=d.data();ppHousesCache={...ppHousesCache,...data};}
     if(curTeamTab==="pp_colour_houses")renderTeamTab();
-  });
+  }));
 }
 
 // Returns true if any session was logged today (for the Stunt Training tile pulse)
@@ -1823,7 +1868,7 @@ document.addEventListener("pointerdown", ppPrimeAudio, {once:true, passive:true}
 // ── PP HOME (the new 5-tile landing page) ──
 function renderPPHome(container){
   startPPListener();
-  const team=getTeam("pink_panthers");
+  const team=getTeam(curTeamId);
   const stunts=team.ppStunts||[];
 
   // Get the "today" pulse state for the Stunt Training tile
@@ -1844,6 +1889,10 @@ function renderPPHome(container){
   const housePts = (ppHousesCache.red||0)+(ppHousesCache.green||0)+(ppHousesCache.blue||0)+(ppHousesCache.yellow||0);
 
   // Build sparkle decorations (random positions/timings)
+  // For the "silver" sparkle style (Tiny Diamonds etc.), mix in diamond glyphs.
+  const sparkleSyms = team.sparkleStyle === "silver"
+    ? ["✦","✧","◆","♦","✩","✺"]
+    : ["✦","✧","٭","✩","★"];
   let sparkles = "";
   for(let i=0;i<14;i++){
     const left = Math.floor(Math.random()*95);
@@ -1852,18 +1901,21 @@ function renderPPHome(container){
     const delay = (Math.random()*8).toFixed(1);
     const dx = (Math.random()*80-40).toFixed(0);
     const dy = (-30 - Math.random()*70).toFixed(0);
-    const sym = ["✦","✧","٭","✩","★"][Math.floor(Math.random()*5)];
+    const sym = sparkleSyms[Math.floor(Math.random()*sparkleSyms.length)];
     sparkles += `<span class="pp-sparkle" style="left:${left}%;top:${top}%;--dx:${dx}px;--dy:${dy}px;--dur:${dur}s;--delay:${delay}s;font-size:${10+Math.random()*10}px">${sym}</span>`;
   }
 
   let html = `
-  <div class="pp-bigscreen-scope pp-gradient-bg" style="position:relative;flex:1;overflow-y:auto;padding:20px 18px 30px;box-sizing:border-box" id="pp-home-wrap">
+  <div class="pp-bigscreen-scope pp-gradient-bg ${team.sparkleStyle==="silver"?"pp-sparkle-silver":""}" style="position:relative;flex:1;overflow-y:auto;padding:20px 18px 30px;box-sizing:border-box" id="pp-home-wrap">
     ${sparkles}
     <button type="button" class="pp-mute-btn" data-pp-home-action="mute" title="${ppMuted?"Unmute":"Mute"}">${ppMuted?"🔇":"🔊"}</button>
 
     <div style="text-align:center;margin-top:8px;margin-bottom:6px">
-      <div class="pp-wordmark">Pink Panthers</div>
-      <div class="pp-tagline">${["let's go panthers 💖","today's the day ✨","one stunt at a time","slay slay slay"][Math.floor(Math.random()*4)]}</div>
+      ${team.logo
+        ? `<img class="pp-team-logo" src="${esc(team.logo)}" alt="${esc(team.name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/>
+           <div class="pp-wordmark" style="display:none">${esc(team.name)}</div>`
+        : `<div class="pp-wordmark">${esc(team.name)}</div>`}
+      <div class="pp-tagline">${["let's go " + team.name.toLowerCase() + " 💖","today's the day ✨","one stunt at a time","slay slay slay"][Math.floor(Math.random()*4)]}</div>
     </div>
 
     <!-- Primary tiles -->
@@ -1892,11 +1944,11 @@ function renderPPHome(container){
         <div class="pp-tile-title" style="font-size:18px">Star Chart</div>
         <div class="pp-tile-sub">${totalStars} stars total</div>
       </button>
-      <button type="button" class="pp-tile" data-pp-home-action="goto-houses" style="--tile-accent:#9b59b6;background:conic-gradient(from 45deg, #ffe5e5, #e5fff0, #e5f1ff, #fff8e5, #ffe5e5)">
+      ${team.hasHouses ? `<button type="button" class="pp-tile" data-pp-home-action="goto-houses" style="--tile-accent:#9b59b6;background:conic-gradient(from 45deg, #ffe5e5, #e5fff0, #e5f1ff, #fff8e5, #ffe5e5)">
         <div class="pp-tile-icon">🏆</div>
         <div class="pp-tile-title" style="font-size:18px">Colour Houses</div>
         <div class="pp-tile-sub">${housePts} pts logged</div>
-      </button>
+      </button>` : ""}
     </div>
 
     <!-- Timer -->
@@ -1960,7 +2012,7 @@ function renderPPHome(container){
 // ── PP STUNT TRAINING (sub-page with tabs across the top) ──
 function renderPPStuntTraining(container){
   startPPListener();
-  const team = getTeam("pink_panthers");
+  const team = getTeam(curTeamId);
   const stunts = team.ppStunts||[];
   // Default to first stunt if the saved tab isn't valid
   if(!stunts.find(s=>s.id===ppStuntTrainingTab)) ppStuntTrainingTab = stunts[0]?stunts[0].id:"pp_s1";
@@ -2088,7 +2140,7 @@ function renderPPStarChart(container){
     <div style="max-width:720px;margin:0 auto">`;
 
   // Sort by stars desc, then alphabetically
-  const sorted = [...PP_ROSTER].sort((a,b)=>{
+  const sorted = [...rosterFor()].sort((a,b)=>{
     const ca = (ppStarsCache[ppAthleteId(a)]||{}).count||0;
     const cb = (ppStarsCache[ppAthleteId(b)]||{}).count||0;
     if(cb !== ca) return cb - ca;
@@ -2345,7 +2397,7 @@ function ppTimerReset(){
 }
 
 function renderPPGroups(container){
-  const team=getTeam("pink_panthers");
+  const team=getTeam(curTeamId);
   const stunt=(team.ppStunts||[]).find(s=>s.id===ppCurStunt);
   if(!stunt){renderPPHome(container);return;}
   if(!stunt.groups||!stunt.groups.length){container.innerHTML=`<div style="padding:40px;text-align:center;color:var(--stone);font-style:italic">No groups set up yet for ${esc(stunt.label)}</div>`;return;}
@@ -2410,7 +2462,7 @@ function selectPPGroup(groupId){
 }
 
 function renderPPSession(container){
-  const team=getTeam("pink_panthers");
+  const team=getTeam(curTeamId);
   const stunt=(team.ppStunts||[]).find(s=>s.id===ppCurStunt);
   const group=stunt&&stunt.groups.find(g=>g.id===ppCurGroup);
   if(!stunt||!group){renderPPGroups(container);return;}
@@ -2643,7 +2695,7 @@ function ppCrownWinners(rows){
 
 function renderPPTeamStats(container){
   startPPListener();
-  const team=getTeam("pink_panthers");
+  const team=getTeam(curTeamId);
   const stunts=team.ppStunts||[];
   const filter=ppStatsFilter;
   const filterLabels={today:"Today",week:"This Week",total:"All Time",fullout:"Fullouts"};
@@ -2790,7 +2842,7 @@ function renderPPTeamStats(container){
 // ── PINK PANTHERS FULLOUT ──
 // Build the unique flyer list across all stunts (preserves first-occurrence order: pp_s1's order).
 function ppAllFlyers(){
-  const team=getTeam("pink_panthers");
+  const team=getTeam(curTeamId);
   const seen=new Set();const out=[];
   (team.ppStunts||[]).forEach(st=>(st.groups||[]).forEach(g=>{if(!seen.has(g.name)){seen.add(g.name);out.push(g.name);}}));
   return out;
@@ -2952,7 +3004,7 @@ function renderPPFullout(container){
 }
 
 function renderPPFulloutEdit(container){
-  const team=getTeam("pink_panthers");
+  const team=getTeam(curTeamId);
   const stunts=team.ppStunts||[];
   const fo=ppFoGetCurrent();
   if(!fo){ ppFoCurId=null; renderTeamTab(); return; }
@@ -3081,7 +3133,7 @@ function ppFoRenderPopup(){
 
   if(kind==="cell-deductions"){
     const{flyer,stuntId,deductions}=ppFoPopup;
-    const team=getTeam("pink_panthers");
+    const team=getTeam(curTeamId);
     const stunt=(team.ppStunts||[]).find(s=>s.id===stuntId);
     const stuntLabel=stunt?stunt.label:stuntId;
     const totalSelected=[...deductions].reduce((a,id)=>a+ppDeductValue(id),0);
