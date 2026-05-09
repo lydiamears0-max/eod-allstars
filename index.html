@@ -280,10 +280,16 @@ body{font-family:'DM Sans',sans-serif;color:var(--ink);}
   color: #b8c4d8;
   text-shadow: 0 0 6px rgba(180, 200, 230, 0.8), 0 0 12px rgba(255, 255, 255, 0.4);
 }
-/* Assassin/sniper-target sparkle variant — Pink Assassins aesthetic */
-.pp-sparkle-assassin .pp-sparkle{
-  color: #b91c1c;
-  text-shadow: 0 0 4px rgba(185, 28, 28, 0.45), 0 0 8px rgba(0, 0, 0, 0.15);
+/* Assassin/sniper-target sparkle variant — Pink Assassins aesthetic.
+   These sparkles are big inline SVGs (crosshairs + X marks), drawn in black.
+   The drop-shadow gives them a soft halo so they pop off the pink background. */
+.pp-sparkle-assassin .pp-sparkle-icon{
+  display: block;
+  line-height: 0; /* prevent inline-svg baseline gap from offsetting the float */
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.18));
+}
+.pp-sparkle-assassin .pp-sparkle-icon svg{
+  display: block;
 }
 
 /* The big italic wordmark */
@@ -2018,14 +2024,18 @@ function renderPPHome(container){
   // Build sparkle decorations (random positions/timings)
   // Each team can declare a sparkleStyle for theme-appropriate glyphs:
   //   "silver"   → diamonds (Tiny Diamonds aesthetic)
-  //   "assassin" → sniper targets / crosshairs (Pink Assassins aesthetic)
+  //   "assassin" → big black SVG crosshairs + X marks (Pink Assassins aesthetic)
   //   default    → pink stars
+  const isAssassin = team.sparkleStyle === "assassin";
+  // For assassin we render inline SVG (crisp + larger). For others, unicode glyphs.
   const sparkleSyms =
-    team.sparkleStyle === "silver"   ? ["✦","✧","◆","♦","✩","✺"] :
-    team.sparkleStyle === "assassin" ? ["⊙","◎","◉","⌖","✛","🎯"] :
-                                       ["✦","✧","٭","✩","★"];
+    team.sparkleStyle === "silver" ? ["✦","✧","◆","♦","✩","✺"] :
+    isAssassin                     ? ["x","crosshair"] :  // SVG markers, expanded below
+                                     ["✦","✧","٭","✩","★"];
+  // Reduce count slightly when sparkles are big so the page doesn't get cluttered
+  const sparkleCount = isAssassin ? 10 : 14;
   let sparkles = "";
-  for(let i=0;i<14;i++){
+  for(let i=0;i<sparkleCount;i++){
     const left = Math.floor(Math.random()*95);
     const top = Math.floor(Math.random()*90);
     const dur = (5+Math.random()*6).toFixed(1);
@@ -2033,10 +2043,26 @@ function renderPPHome(container){
     const dx = (Math.random()*80-40).toFixed(0);
     const dy = (-30 - Math.random()*70).toFixed(0);
     const sym = sparkleSyms[Math.floor(Math.random()*sparkleSyms.length)];
-    // Assassin targets are slightly larger (12-26px) so the bullseyes/crosshairs read clearly
-    const sizeMin = team.sparkleStyle === "assassin" ? 12 : 10;
-    const sizeRange = team.sparkleStyle === "assassin" ? 14 : 10;
-    sparkles += `<span class="pp-sparkle" style="left:${left}%;top:${top}%;--dx:${dx}px;--dy:${dy}px;--dur:${dur}s;--delay:${delay}s;font-size:${sizeMin+Math.random()*sizeRange}px">${sym}</span>`;
+
+    if(isAssassin){
+      // 36–60px, random per sparkle
+      const size = 36 + Math.floor(Math.random()*24);
+      const svg = sym === "x"
+        ? `<svg viewBox="0 0 24 24" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+             <line x1="5" y1="5" x2="19" y2="19" stroke="#000" stroke-width="2.5" stroke-linecap="round"/>
+             <line x1="19" y1="5" x2="5" y2="19" stroke="#000" stroke-width="2.5" stroke-linecap="round"/>
+           </svg>`
+        : `<svg viewBox="0 0 24 24" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+             <circle cx="12" cy="12" r="6" fill="none" stroke="#000" stroke-width="2"/>
+             <line x1="2" y1="2" x2="22" y2="22" stroke="#000" stroke-width="2" stroke-linecap="round"/>
+             <line x1="22" y1="2" x2="2" y2="22" stroke="#000" stroke-width="2" stroke-linecap="round"/>
+           </svg>`;
+      sparkles += `<span class="pp-sparkle pp-sparkle-icon" style="left:${left}%;top:${top}%;--dx:${dx}px;--dy:${dy}px;--dur:${dur}s;--delay:${delay}s">${svg}</span>`;
+    }else{
+      const sizeMin = 10;
+      const sizeRange = 10;
+      sparkles += `<span class="pp-sparkle" style="left:${left}%;top:${top}%;--dx:${dx}px;--dy:${dy}px;--dur:${dur}s;--delay:${delay}s;font-size:${sizeMin+Math.random()*sizeRange}px">${sym}</span>`;
+    }
   }
 
   // Map sparkleStyle → CSS class (each style gets its own color/glow treatment)
