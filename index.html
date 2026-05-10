@@ -291,6 +291,15 @@ body{font-family:'DM Sans',sans-serif;color:var(--ink);}
 .pp-sparkle-assassin .pp-sparkle-icon svg{
   display: block;
 }
+/* Paw-print sparkle variant — Pink Panthers. Hot pink paws with a soft pink glow. */
+.pp-sparkle-paws .pp-sparkle-icon{
+  display: block;
+  line-height: 0;
+  filter: drop-shadow(0 2px 4px rgba(255, 109, 191, 0.35));
+}
+.pp-sparkle-paws .pp-sparkle-icon svg{
+  display: block;
+}
 
 /* The big italic wordmark */
 .pp-wordmark{
@@ -963,7 +972,7 @@ const TEAMS=[
    noClassPlan:true,
    useStuntSetup:true,
    hasHouses:true,
-   sparkleStyle:"pink",
+   sparkleStyle:"paws",
    taglineEmoji:"💖",
    roster:["Paris","Addi","Amarlie","Azarlah","Caitie","Elly","Emma","Farrah","Freyah","Jess","Isla","Amarni","Lilah","Nat","Ruby A","Ruby B","Ruby H","Sienna","Ivy","Talia","Taylor"],
    ppStunts:[
@@ -2023,17 +2032,20 @@ function renderPPHome(container){
 
   // Build sparkle decorations (random positions/timings)
   // Each team can declare a sparkleStyle for theme-appropriate glyphs:
-  //   "silver"   → diamonds (Tiny Diamonds aesthetic)
-  //   "assassin" → big black SVG crosshairs + X marks (Pink Assassins aesthetic)
-  //   default    → pink stars
+  //   "silver"   → diamonds (Tiny Diamonds)
+  //   "assassin" → sniper scope reticles + X marks (Pink Assassins)
+  //   "paws"     → hot pink paw prints (Pink Panthers)
+  //   default    → pink stars (fallback)
   const isAssassin = team.sparkleStyle === "assassin";
-  // For assassin we render inline SVG (crisp + larger). For others, unicode glyphs.
+  const isPaws     = team.sparkleStyle === "paws";
+  const useSvg     = isAssassin || isPaws;
   const sparkleSyms =
     team.sparkleStyle === "silver" ? ["✦","✧","◆","♦","✩","✺"] :
-    isAssassin                     ? ["x","crosshair"] :  // SVG markers, expanded below
+    isAssassin                     ? ["scope","x"] :   // SVG markers, expanded below
+    isPaws                         ? ["paw"] :         // SVG marker
                                      ["✦","✧","٭","✩","★"];
-  // Reduce count slightly when sparkles are big so the page doesn't get cluttered
-  const sparkleCount = isAssassin ? 10 : 14;
+  // Slightly fewer sparkles when they're large — keeps the page from feeling cluttered.
+  const sparkleCount = useSvg ? 10 : 14;
   let sparkles = "";
   for(let i=0;i<sparkleCount;i++){
     const left = Math.floor(Math.random()*95);
@@ -2044,19 +2056,38 @@ function renderPPHome(container){
     const dy = (-30 - Math.random()*70).toFixed(0);
     const sym = sparkleSyms[Math.floor(Math.random()*sparkleSyms.length)];
 
-    if(isAssassin){
-      // 36–60px, random per sparkle
+    if(useSvg){
+      // 36–60px random per icon
       const size = 36 + Math.floor(Math.random()*24);
-      const svg = sym === "x"
-        ? `<svg viewBox="0 0 24 24" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-             <line x1="5" y1="5" x2="19" y2="19" stroke="#000" stroke-width="2.5" stroke-linecap="round"/>
-             <line x1="19" y1="5" x2="5" y2="19" stroke="#000" stroke-width="2.5" stroke-linecap="round"/>
-           </svg>`
-        : `<svg viewBox="0 0 24 24" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-             <circle cx="12" cy="12" r="6" fill="none" stroke="#000" stroke-width="2"/>
-             <line x1="2" y1="2" x2="22" y2="22" stroke="#000" stroke-width="2" stroke-linecap="round"/>
-             <line x1="22" y1="2" x2="2" y2="22" stroke="#000" stroke-width="2" stroke-linecap="round"/>
-           </svg>`;
+      let svg = "";
+      if(sym === "scope"){
+        // Sniper scope reticle: outer ring + inner ring + 4 crosshair lines that
+        // run from the edge through the outer ring and stop at the inner ring,
+        // leaving a clean gap in the middle (matches the reference image).
+        svg = `<svg viewBox="0 0 100 100" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle cx="50" cy="50" r="30" fill="none" stroke="#000" stroke-width="3"/>
+          <circle cx="50" cy="50" r="14" fill="none" stroke="#000" stroke-width="3"/>
+          <line x1="50" y1="2"  x2="50" y2="36" stroke="#000" stroke-width="3" stroke-linecap="round"/>
+          <line x1="50" y1="64" x2="50" y2="98" stroke="#000" stroke-width="3" stroke-linecap="round"/>
+          <line x1="2"  y1="50" x2="36" y2="50" stroke="#000" stroke-width="3" stroke-linecap="round"/>
+          <line x1="64" y1="50" x2="98" y2="50" stroke="#000" stroke-width="3" stroke-linecap="round"/>
+        </svg>`;
+      } else if(sym === "x"){
+        svg = `<svg viewBox="0 0 24 24" width="${Math.round(size*0.7)}" height="${Math.round(size*0.7)}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <line x1="5" y1="5" x2="19" y2="19" stroke="#000" stroke-width="2.5" stroke-linecap="round"/>
+          <line x1="19" y1="5" x2="5" y2="19" stroke="#000" stroke-width="2.5" stroke-linecap="round"/>
+        </svg>`;
+      } else if(sym === "paw"){
+        // Paw print: 1 main pad + 4 toes arranged in an arc above. Hot pink.
+        const rot = Math.floor(Math.random()*60-30); // each paw rotated -30°…+30° for personality
+        svg = `<svg viewBox="0 0 100 100" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="transform:rotate(${rot}deg)">
+          <ellipse cx="50" cy="68" rx="24" ry="22" fill="#ff6dbf"/>
+          <ellipse cx="22" cy="44" rx="9" ry="13" fill="#ff6dbf" transform="rotate(-22 22 44)"/>
+          <ellipse cx="40" cy="22" rx="9" ry="13" fill="#ff6dbf" transform="rotate(-8 40 22)"/>
+          <ellipse cx="60" cy="22" rx="9" ry="13" fill="#ff6dbf" transform="rotate(8 60 22)"/>
+          <ellipse cx="78" cy="44" rx="9" ry="13" fill="#ff6dbf" transform="rotate(22 78 44)"/>
+        </svg>`;
+      }
       sparkles += `<span class="pp-sparkle pp-sparkle-icon" style="left:${left}%;top:${top}%;--dx:${dx}px;--dy:${dy}px;--dur:${dur}s;--delay:${delay}s">${svg}</span>`;
     }else{
       const sizeMin = 10;
@@ -2068,6 +2099,7 @@ function renderPPHome(container){
   // Map sparkleStyle → CSS class (each style gets its own color/glow treatment)
   const sparkleClass = team.sparkleStyle === "silver"   ? "pp-sparkle-silver"
                      : team.sparkleStyle === "assassin" ? "pp-sparkle-assassin"
+                     : team.sparkleStyle === "paws"     ? "pp-sparkle-paws"
                      : "";
 
   let html = `
