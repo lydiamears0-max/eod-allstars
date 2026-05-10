@@ -267,9 +267,9 @@ body{font-family:'DM Sans',sans-serif;color:var(--ink);}
   background-size: 400% 400%;
   animation: ppHueDrift 18s ease-in-out infinite;
 }
-/* Lady Lynx uses a pretty pastel blue gradient */
+/* Lady Lynx uses a soft cyan/aqua gradient — lighter and a touch greener than a true blue */
 .pp-gradient-blue{
-  background: linear-gradient(120deg, #e6f4ff 0%, #d0e8ff 25%, #bcdcff 50%, #d4ecff 75%, #e6f4ff 100%);
+  background: linear-gradient(120deg, #d8f1f5 0%, #bfe6ec 25%, #ade0e8 50%, #c8ebf1 75%, #d8f1f5 100%);
   background-size: 400% 400%;
   animation: ppHueDrift 18s ease-in-out infinite;
 }
@@ -340,6 +340,12 @@ body{font-family:'DM Sans',sans-serif;color:var(--ink);}
   filter: drop-shadow(0 4px 12px rgba(196, 85, 154, 0.18));
 }
 .pp-bigscreen-scope .pp-team-logo{ height: 220px; }
+/* Lady Lynx (butterflies sparkle style): pink halo around the logo so it pops against the cyan background */
+.pp-sparkle-butterflies .pp-team-logo{
+  filter: drop-shadow(0 0 18px rgba(255, 130, 200, 0.7))
+          drop-shadow(0 0 36px rgba(255, 130, 200, 0.45))
+          drop-shadow(0 4px 12px rgba(196, 85, 154, 0.25));
+}
 .pp-tagline{
   font-family: 'Caveat', cursive;
   text-align: center;
