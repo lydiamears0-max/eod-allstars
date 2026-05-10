@@ -9,7 +9,7 @@
 <link rel="icon" type="image/png" href="favicon.png"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
-<link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Caveat:wght@500;700&family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Bagel+Fat+One&family=Bebas+Neue&family=Caveat:wght@500;700&family=DM+Serif+Display:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600;9..40,700&display=swap" rel="stylesheet"/>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <style>
@@ -42,17 +42,205 @@ body{font-family:'DM Sans',sans-serif;color:var(--ink);}
 .backbar-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
 .pill-btn{padding:5px 13px;background:transparent;border:1px solid #3a3a3a;border-radius:100px;font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;color:#999;cursor:pointer;}
 .pill-btn:hover,.pill-btn.dark{background:rgba(255,255,255,.09);border-color:#555;color:#ccc;}
-.home-content{flex:1;overflow-y:auto;padding:28px 24px 60px;}
-.teams-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px;}
-.team-tile{background:var(--white);border:1px solid var(--border);border-radius:14px;padding:16px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0;transition:all .15s;overflow:hidden;}
-.team-tile:hover{border-color:var(--border2);transform:translateY(-2px);box-shadow:0 4px 16px rgba(0,0,0,.07);}
-.team-tile img{width:100%;max-width:140px;height:auto;object-fit:contain;}
-.team-abbr-fb{width:70px;height:70px;border-radius:50%;background:var(--ink);display:flex;align-items:center;justify-content:center;font-family:'DM Serif Display',serif;font-size:18px;font-style:italic;color:white;}
-.all-tile{background:var(--ink);border:1px solid #2a2a2a;border-radius:14px;padding:20px 14px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:10px;transition:all .15s;text-align:center;}
-.all-tile:hover{background:#252525;transform:translateY(-2px);}
-.all-icon{width:64px;height:64px;border-radius:50%;background:#222;border:2px solid #333;display:flex;align-items:center;justify-content:center;font-size:24px;}
-.all-name{font-size:11px;font-weight:600;color:#ddd;letter-spacing:1px;text-transform:uppercase;}
-.all-sub{font-size:10px;color:#555;}
+/* ===== HOME PAGE — landing screen =====
+   The dark topbar is hidden here: the giant Bebas Neue hero replaces its
+   "EOD Allstars / fullout tracker" branding role. Sync indicator stays
+   visible on team pages where it matters; sd("home", ...) silently no-ops
+   when its dot/label aren't attached. */
+#home > .topbar{display:none;}
+.home-content{flex:1;overflow-y:auto;padding:0;position:relative;}
+/* White-glitter background (same recipe as IBK, but kept separate so we
+   don't inherit IBK's `> * { z-index:1 }` rule that would interfere with
+   the watermark / content layering on this page). */
+.home-glitter{
+  position:relative;
+  background:
+    radial-gradient(circle at 13% 22%, rgba(255,255,255,0.95) 0.6px, transparent 1.2px),
+    radial-gradient(circle at 47%  8%, rgba(255,255,255,0.9)  0.5px, transparent 1.1px),
+    radial-gradient(circle at 28% 67%, rgba(255,255,255,0.95) 0.7px, transparent 1.3px),
+    radial-gradient(circle at 73% 41%, rgba(255,255,255,0.9)  0.5px, transparent 1.1px),
+    radial-gradient(circle at 91% 78%, rgba(255,255,255,0.85) 0.6px, transparent 1.2px),
+    radial-gradient(circle at  8% 88%, rgba(255,255,255,0.95) 0.5px, transparent 1.1px),
+    radial-gradient(circle at 56% 91%, rgba(255,255,255,0.85) 0.7px, transparent 1.3px),
+    radial-gradient(circle at 82% 13%, rgba(255,255,255,0.95) 0.6px, transparent 1.2px),
+    radial-gradient(circle at 38% 38%, rgba(255,255,255,0.9)  0.5px, transparent 1.1px),
+    radial-gradient(circle at 67% 65%, rgba(255,255,255,0.85) 0.6px, transparent 1.2px),
+    radial-gradient(circle at 22% 48%, rgba(220,220,225,0.6)  0.4px, transparent 1.0px),
+    radial-gradient(circle at 88% 32%, rgba(220,220,225,0.55) 0.4px, transparent 1.0px),
+    linear-gradient(135deg, #f4f4f5 0%, #fafafa 50%, #f4f4f5 100%);
+  background-size: 32px 32px, 32px 32px, 32px 32px, 32px 32px, 32px 32px, 32px 32px, 32px 32px, 32px 32px, 32px 32px, 32px 32px, 32px 32px, 32px 32px, 100% 100%;
+  background-repeat: repeat, repeat, repeat, repeat, repeat, repeat, repeat, repeat, repeat, repeat, repeat, repeat, no-repeat;
+  animation: ppGlitterShift 30s linear infinite;
+}
+.home-glitter::before, .home-glitter::after{content:""; position:absolute; inset:0; pointer-events:none;}
+.home-glitter::before{
+  background:
+    radial-gradient(circle at 18% 24%, rgba(255,255,255,1) 1.2px, transparent 2.2px),
+    radial-gradient(circle at 64% 12%, rgba(255,255,255,1) 1.1px, transparent 2.1px),
+    radial-gradient(circle at 41% 52%, rgba(255,255,255,1) 1.3px, transparent 2.3px),
+    radial-gradient(circle at 84% 48%, rgba(255,255,255,1) 1.1px, transparent 2.1px),
+    radial-gradient(circle at 12% 78%, rgba(255,255,255,1) 1.2px, transparent 2.2px),
+    radial-gradient(circle at 56% 86%, rgba(255,255,255,1) 1.3px, transparent 2.3px),
+    radial-gradient(circle at 90% 88%, rgba(255,255,255,1) 1.1px, transparent 2.1px);
+  background-size: 110px 110px, 110px 110px, 110px 110px, 110px 110px, 110px 110px, 110px 110px, 110px 110px;
+  animation: ppGlitterShift2 22s linear infinite;
+  mix-blend-mode: screen; z-index:0;
+}
+.home-glitter::after{
+  background:
+    radial-gradient(circle at 20% 30%, rgba(255,255,255,0.95) 1.6px, transparent 4px),
+    radial-gradient(circle at 70% 18%, rgba(255,255,255,0.95) 1.8px, transparent 4.5px),
+    radial-gradient(circle at 38% 70%, rgba(255,255,255,0.95) 2.0px, transparent 5px),
+    radial-gradient(circle at 88% 60%, rgba(255,255,255,0.95) 1.6px, transparent 4px),
+    radial-gradient(circle at  8% 56%, rgba(255,255,255,0.95) 1.4px, transparent 3.5px),
+    radial-gradient(circle at 60% 92%, rgba(255,255,255,0.95) 1.7px, transparent 4.2px);
+  background-size: 240px 240px, 240px 240px, 240px 240px, 240px 240px, 240px 240px, 240px 240px;
+  animation: ppGlitterTwinkle 2.4s ease-in-out infinite;
+  mix-blend-mode: screen; z-index:0;
+}
+
+/* === EOD watermark behind the grid === */
+.home-watermark{
+  position:absolute; top:50%; left:50%;
+  transform:translate(-50%, -50%);
+  width:min(72%, 760px); height:auto;
+  opacity:0.06;
+  filter:grayscale(1);
+  pointer-events:none;
+  z-index:1;
+}
+.home-watermark-fb{
+  position:absolute; top:50%; left:50%;
+  transform:translate(-50%,-50%);
+  font-family:'Bebas Neue','Bagel Fat One',sans-serif;
+  font-size:clamp(120px, 22vw, 280px);
+  line-height:0.85;
+  color:rgba(40,20,40,0.05);
+  letter-spacing:-2px;
+  white-space:nowrap; text-align:center;
+  pointer-events:none;
+  z-index:1;
+  display:none;
+}
+
+/* === Hero text ===
+   Dark-grey "metallic" gradient with a slow shimmer sweep — a softer, more
+   editorial feel than the dark→pink ramp. The 5-stop gradient (dark/light/dark/light/dark)
+   plus 220% background-size and animated background-position creates the
+   "softly moving texture" wash. Text is one line: "THE HOME OF CHAMPIONS". */
+.home-stage{position:relative; padding:60px 24px 40px; z-index:2;}
+.home-hero{
+  font-family:'Bebas Neue', sans-serif;
+  font-size: clamp(38px, 7.5vw, 120px);
+  line-height:0.95;
+  letter-spacing:0.01em;
+  text-align:center;
+  white-space:nowrap;
+  background: linear-gradient(100deg,
+    #2c2c2e 0%,
+    #6a6a6e 22%,
+    #1c1c1e 50%,
+    #6a6a6e 78%,
+    #2c2c2e 100%);
+  background-size: 220% 100%;
+  background-position: 0% 50%;
+  -webkit-background-clip:text; background-clip:text;
+  color:transparent; -webkit-text-fill-color:transparent;
+  margin:0 auto 28px;
+  font-weight:400;
+  animation: heroShimmer 9s ease-in-out infinite;
+}
+@keyframes heroShimmer{
+  0%,100% { background-position:   0% 50%; }
+  50%     { background-position: 100% 50%; }
+}
+
+/* === Tile grid === */
+.home-tile-grid{
+  display:grid;
+  grid-template-columns:repeat(3, 1fr);
+  gap:18px;
+  max-width:1100px;
+  margin:0 auto 30px;
+  position:relative; z-index:2;
+}
+.home-tile{
+  position:relative;
+  height:140px;
+  border-radius:20px;
+  overflow:hidden;
+  cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  background:rgba(255,255,255,0.55);
+  backdrop-filter:blur(8px);
+  -webkit-backdrop-filter:blur(8px);
+  border:1px solid rgba(255,255,255,0.85);
+  box-shadow:0 6px 22px rgba(0,0,0,0.05), inset 0 1px 0 rgba(255,255,255,0.6);
+  transition:transform .2s, box-shadow .2s;
+}
+.home-tile:hover{
+  transform:translateY(-3px);
+  box-shadow:0 10px 30px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.7);
+}
+.home-tile-logo{
+  max-height:104px; max-width:80%;
+  width:auto; height:auto;
+  object-fit:contain;
+  position:relative; z-index:3;
+  filter:drop-shadow(0 2px 6px rgba(0,0,0,0.06));
+}
+.home-tile-fb{
+  font-family:'DM Serif Display', serif;
+  font-style:italic;
+  font-size:22px;
+  color:#2a1830;
+  position:relative; z-index:3;
+  text-align:center; padding:0 12px;
+}
+
+/* Tile floaties — slower, smaller, subtler than page-level sparkles */
+.home-tile-floaty{
+  position:absolute; pointer-events:none; opacity:0;
+  z-index:2;
+  animation: ppHomeTileDrift var(--dur,11s) ease-in-out infinite;
+  animation-delay: var(--delay,0s);
+}
+.home-tile-floaty svg{display:block;}
+@keyframes ppHomeTileDrift{
+  0%   { transform:translate(0,0) scale(0.55) rotate(0deg); opacity:0; }
+  20%  { opacity:0.45; }
+  80%  { opacity:0.45; }
+  100% { transform:translate(var(--dx,15px), var(--dy,-25px)) scale(1) rotate(120deg); opacity:0; }
+}
+
+/* === All Teams Analytics CTA pill === */
+.home-analytics-pill{
+  display:flex; align-items:center; justify-content:center; gap:14px;
+  width:100%; max-width:460px;
+  margin:0 auto 30px;
+  padding:14px 28px;
+  background:linear-gradient(135deg, #ff7ec7 0%, #f24fa8 100%);
+  border:none; border-radius:34px;
+  cursor:pointer;
+  position:relative; z-index:2;
+  box-shadow:0 8px 24px rgba(242,79,168,0.32);
+  transition:transform .15s, box-shadow .15s;
+  font-family:'DM Sans', sans-serif;
+}
+.home-analytics-pill:hover{
+  transform:translateY(-2px);
+  box-shadow:0 12px 32px rgba(242,79,168,0.42);
+}
+.home-analytics-pill img{height:38px; width:auto; filter:drop-shadow(0 1px 2px rgba(0,0,0,0.15));}
+.home-analytics-pill .lbl{
+  font-size:13px; font-weight:600;
+  letter-spacing:1.5px; text-transform:uppercase;
+  color:#ffffff;
+  text-shadow:0 1px 2px rgba(0,0,0,0.2);
+}
+
+/* Legacy team-abbr-fb still used as image-load fallback in renderHome */
+.team-abbr-fb{display:none;}
 .team-body{flex:1;display:flex;min-height:0;overflow:hidden;}
 .team-nav{width:190px;flex-shrink:0;background:var(--ink);padding:14px;display:flex;flex-direction:column;overflow-y:auto;}
 .team-logo-sidebar{width:140px;margin:0 auto 16px;display:block;}
@@ -301,28 +489,77 @@ body{font-family:'DM Sans',sans-serif;color:var(--ink);}
   background-size: 400% 400%;
   animation: ppHueDrift 18s ease-in-out infinite;
 }
-/* IBK: white background with subtle pink glitter texture (small pink dots tiled over a pink-tinged white).
-   Multiple radial-gradient layers give the page that "soft wash of glitter" feel. */
+/* IBK: dense WHITE glitter field (matches the soft cream/white glitter card reference).
+   Layer 1 (.pp-gradient-glitter-white)        — base off-white wash + many small static white speckles
+   Layer 2 (::before pseudo-element)           — slow drift of medium glitter flecks
+   Layer 3 (::after pseudo-element)            — fast TWINKLE of bright white reflective highlights
+   The combination reads as glittery cream paper with reflections catching the light. */
 .pp-gradient-glitter-white{
+  position: relative;
   background:
-    radial-gradient(circle at 13% 22%, rgba(255,140,200,0.55) 1px, transparent 2px),
-    radial-gradient(circle at 47%  8%, rgba(255,170,220,0.45) 1px, transparent 2px),
-    radial-gradient(circle at 28% 67%, rgba(255,180,235,0.5)  1px, transparent 2px),
-    radial-gradient(circle at 73% 41%, rgba(255,140,200,0.6)  1px, transparent 2px),
-    radial-gradient(circle at 91% 78%, rgba(255,160,210,0.45) 1px, transparent 2px),
-    radial-gradient(circle at  8% 88%, rgba(255,180,235,0.5)  1px, transparent 2px),
-    radial-gradient(circle at 56% 91%, rgba(255,140,200,0.4)  1px, transparent 2px),
-    radial-gradient(circle at 82% 13%, rgba(255,170,220,0.55) 1px, transparent 2px),
-    radial-gradient(circle at 38% 38%, rgba(255,180,235,0.5)  1px, transparent 2px),
-    radial-gradient(circle at 67% 65%, rgba(255,140,200,0.45) 1px, transparent 2px),
-    linear-gradient(135deg, #fffafd 0%, #fff5fa 50%, #fffafd 100%);
-  background-size: 90px 90px, 90px 90px, 90px 90px, 90px 90px, 90px 90px, 90px 90px, 90px 90px, 90px 90px, 90px 90px, 90px 90px, 100% 100%;
-  background-repeat: repeat, repeat, repeat, repeat, repeat, repeat, repeat, repeat, repeat, repeat, no-repeat;
+    /* tiny dense white speckles (the "grain" of the glitter) */
+    radial-gradient(circle at 13% 22%, rgba(255,255,255,0.95) 0.6px, transparent 1.2px),
+    radial-gradient(circle at 47%  8%, rgba(255,255,255,0.9)  0.5px, transparent 1.1px),
+    radial-gradient(circle at 28% 67%, rgba(255,255,255,0.95) 0.7px, transparent 1.3px),
+    radial-gradient(circle at 73% 41%, rgba(255,255,255,0.9)  0.5px, transparent 1.1px),
+    radial-gradient(circle at 91% 78%, rgba(255,255,255,0.85) 0.6px, transparent 1.2px),
+    radial-gradient(circle at  8% 88%, rgba(255,255,255,0.95) 0.5px, transparent 1.1px),
+    radial-gradient(circle at 56% 91%, rgba(255,255,255,0.85) 0.7px, transparent 1.3px),
+    radial-gradient(circle at 82% 13%, rgba(255,255,255,0.95) 0.6px, transparent 1.2px),
+    radial-gradient(circle at 38% 38%, rgba(255,255,255,0.9)  0.5px, transparent 1.1px),
+    radial-gradient(circle at 67% 65%, rgba(255,255,255,0.85) 0.6px, transparent 1.2px),
+    radial-gradient(circle at 22% 48%, rgba(220,220,225,0.6)  0.4px, transparent 1.0px),
+    radial-gradient(circle at 88% 32%, rgba(220,220,225,0.55) 0.4px, transparent 1.0px),
+    /* base soft cream-white wash (matches the slight grey tint of real glitter card) */
+    linear-gradient(135deg, #f4f4f5 0%, #fafafa 50%, #f4f4f5 100%);
+  background-size: 32px 32px, 32px 32px, 32px 32px, 32px 32px, 32px 32px, 32px 32px, 32px 32px, 32px 32px, 32px 32px, 32px 32px, 32px 32px, 32px 32px, 100% 100%;
+  background-repeat: repeat, repeat, repeat, repeat, repeat, repeat, repeat, repeat, repeat, repeat, repeat, repeat, no-repeat;
   animation: ppGlitterShift 30s linear infinite;
 }
+.pp-gradient-glitter-white::before,
+.pp-gradient-glitter-white::after{
+  content:""; position:absolute; inset:0; pointer-events:none; z-index:0;
+}
+/* Medium-size drifting glitter flecks (slight bigger than the base speckle field) */
+.pp-gradient-glitter-white::before{
+  background:
+    radial-gradient(circle at 18% 24%, rgba(255,255,255,1) 1.2px, transparent 2.2px),
+    radial-gradient(circle at 64% 12%, rgba(255,255,255,1) 1.1px, transparent 2.1px),
+    radial-gradient(circle at 41% 52%, rgba(255,255,255,1) 1.3px, transparent 2.3px),
+    radial-gradient(circle at 84% 48%, rgba(255,255,255,1) 1.1px, transparent 2.1px),
+    radial-gradient(circle at 12% 78%, rgba(255,255,255,1) 1.2px, transparent 2.2px),
+    radial-gradient(circle at 56% 86%, rgba(255,255,255,1) 1.3px, transparent 2.3px),
+    radial-gradient(circle at 90% 88%, rgba(255,255,255,1) 1.1px, transparent 2.1px);
+  background-size: 110px 110px, 110px 110px, 110px 110px, 110px 110px, 110px 110px, 110px 110px, 110px 110px;
+  animation: ppGlitterShift2 22s linear infinite;
+  mix-blend-mode: screen;
+}
+/* Bright twinkling reflective highlights — these flicker on/off to mimic glitter catching the light */
+.pp-gradient-glitter-white::after{
+  background:
+    radial-gradient(circle at 20% 30%, rgba(255,255,255,0.95) 1.6px, transparent 4px),
+    radial-gradient(circle at 70% 18%, rgba(255,255,255,0.95) 1.8px, transparent 4.5px),
+    radial-gradient(circle at 38% 70%, rgba(255,255,255,0.95) 2.0px, transparent 5px),
+    radial-gradient(circle at 88% 60%, rgba(255,255,255,0.95) 1.6px, transparent 4px),
+    radial-gradient(circle at  8% 56%, rgba(255,255,255,0.95) 1.4px, transparent 3.5px),
+    radial-gradient(circle at 60% 92%, rgba(255,255,255,0.95) 1.7px, transparent 4.2px);
+  background-size: 240px 240px, 240px 240px, 240px 240px, 240px 240px, 240px 240px, 240px 240px;
+  animation: ppGlitterTwinkle 2.4s ease-in-out infinite;
+  mix-blend-mode: screen;
+}
+/* Make sure direct children sit above the pseudo-element glitter layers */
+.pp-gradient-glitter-white > *{ position: relative; z-index: 1; }
 @keyframes ppGlitterShift{
-  0%   { background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0% 0%; }
-  100% { background-position: 90px 90px, -90px 90px, 90px -90px, -90px -90px, 90px 90px, -90px 90px, 90px -90px, -90px -90px, 90px 90px, -90px 90px, 0% 0%; }
+  0%   { background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0% 0%; }
+  100% { background-position: 32px 32px, -32px 32px, 32px -32px, -32px -32px, 32px 32px, -32px 32px, 32px -32px, -32px -32px, 32px 32px, -32px 32px, 32px 32px, -32px 32px, 0% 0%; }
+}
+@keyframes ppGlitterShift2{
+  0%   { background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+  100% { background-position: 110px 110px, -110px 55px, 55px -110px, -55px -110px, 110px 55px, -110px 110px, 55px -110px; }
+}
+@keyframes ppGlitterTwinkle{
+  0%, 100% { opacity: 0.35; }
+  50%      { opacity: 1;    }
 }
 
 /* Drifting sparkle particles in the background */
@@ -856,7 +1093,9 @@ body{font-family:'DM Sans',sans-serif;color:var(--ink);}
 .absent-chk.on{background:var(--red);border-color:var(--red);}
 .absent-chk.on::after{content:'x';color:white;font-size:10px;font-weight:700;line-height:1;}
 @media(max-width:680px){
-  .teams-grid{grid-template-columns:repeat(2,1fr);}
+  .home-tile-grid{grid-template-columns:repeat(2,1fr);}
+  .home-hero{font-size:clamp(44px, 14vw, 88px);}
+  .home-stage{padding:24px 16px 40px;}
   .team-body{flex-direction:column;}
   .team-nav{width:100%;max-height:110px;flex-direction:row;overflow-x:auto;padding:8px;}
   .team-nav-btn{border-bottom:none;border-right:1px solid #222;white-space:nowrap;padding:8px 10px;}
@@ -867,8 +1106,11 @@ body{font-family:'DM Sans',sans-serif;color:var(--ink);}
   .fo-wrap{flex-direction:column;}
   .fo-left{width:100%;max-height:34vh;}
 }
+@media(max-width:480px){
+  .home-tile-grid{grid-template-columns:1fr; gap:14px;}
+}
 @media(min-width:681px) and (max-width:1024px){
-  .teams-grid{grid-template-columns:repeat(3,1fr);}
+  /* keep 3 columns on tablet — the design fits comfortably */
 }
 </style>
 </head>
@@ -880,8 +1122,17 @@ body{font-family:'DM Sans',sans-serif;color:var(--ink);}
     <div id="eod-text" style="display:none;flex-direction:column;gap:1px"><div class="topbar-wordmark">EOD Allstars</div><div class="topbar-sub">fullout tracker</div></div>
     <div class="sync-wrap"><div class="sync-dot busy" id="home-sync-dot"></div><span class="sync-lbl" id="home-sync-lbl">connecting</span></div>
   </div>
-  <div class="home-content">
-    <div class="teams-grid" id="teams-grid"></div>
+  <div class="home-content home-glitter">
+    <img class="home-watermark" src="logo-eod.png" alt="" aria-hidden="true" onerror="this.style.display='none';document.querySelector('.home-watermark-fb').style.display='block'"/>
+    <div class="home-watermark-fb">EOD<br>ALLSTARS</div>
+    <div class="home-stage">
+      <h1 class="home-hero">THE HOME OF CHAMPIONS</h1>
+      <div class="home-tile-grid" id="teams-grid"></div>
+      <button class="home-analytics-pill" onclick="openAllAnalytics()" type="button">
+        <img src="logo-eod.png" alt="" aria-hidden="true" onerror="this.style.display='none'"/>
+        <span class="lbl">All Teams Analytics</span>
+      </button>
+    </div>
   </div>
 </div>
 <div id="team-view" class="screen">
@@ -1450,14 +1701,62 @@ async function planSave(p){p.updated_at=new Date().toISOString();await plansCol(
 async function planDel(id){await plansCol(curTeamId).doc(id).delete();}
 
 // ── HOME ──
+// Build 4 floaties per team tile, one per quadrant for even distribution
+// (random placement was clumping). Each floaty gets jitter inside its cell.
+// Pink Assassins (scope/X glyphs are detail-heavy and read small) gets a
+// bumped size so the icons are legible at floaty scale.
+function buildHomeTileFloaties(team){
+  const syms = getSparkleSyms(team);
+  const isButterflies = team.sparkleStyle === "butterflies";
+  const isAssassin    = team.sparkleStyle === "assassin";
+  // Four quadrant cells across the tile. Each defines a [left%, top%] range
+  // for the floaty's origin; gaps between cells (44–56% horizontal,
+  // 44–52% vertical) keep the centred logo unobstructed.
+  const cells = [
+    { lx: 4,  ly: 8,  rx: 36, ry: 40 },  // top-left
+    { lx: 60, ly: 8,  rx: 88, ry: 40 },  // top-right
+    { lx: 4,  ly: 56, rx: 36, ry: 86 },  // bottom-left
+    { lx: 60, ly: 56, rx: 88, ry: 86 },  // bottom-right
+  ];
+  let html = "";
+  cells.forEach((c, i) => {
+    const sym  = syms[Math.floor(Math.random()*syms.length)];
+    const left = c.lx + Math.random() * (c.rx - c.lx);
+    const top  = c.ly + Math.random() * (c.ry - c.ly);
+    // Stagger delays evenly across the cycle so floaties don't all hit
+    // the low-opacity phase at the same time.
+    const dur  = (10 + Math.random()*4).toFixed(1);
+    const delay= (i * 2.5 + Math.random()*1.5).toFixed(1);
+    const dx   = (Math.random()*36 - 18).toFixed(0);
+    const dy   = (-12 - Math.random()*22).toFixed(0);
+    if(SVG_SYMS.has(sym)){
+      // Bigger base range than before (22–34); assassin gets +6 on top so
+      // scope reticles + X marks are legible at tile scale.
+      const baseMin   = isAssassin ? 28 : 22;
+      const baseRange = 12;
+      const size = baseMin + Math.floor(Math.random()*baseRange);
+      const svg  = buildSparkleSvg(sym, size);
+      html += `<span class="home-tile-floaty" style="left:${left.toFixed(1)}%;top:${top.toFixed(1)}%;--dx:${dx}px;--dy:${dy}px;--dur:${dur}s;--delay:${delay}s">${svg}</span>`;
+    } else {
+      // unicode glyphs (silver diamonds, butterflies, default stars)
+      const sizeMin   = isButterflies ? 18 : 11;
+      const sizeRange = isButterflies ? 10 : 6;
+      const fs = (sizeMin + Math.random()*sizeRange).toFixed(1);
+      html += `<span class="home-tile-floaty" style="left:${left.toFixed(1)}%;top:${top.toFixed(1)}%;--dx:${dx}px;--dy:${dy}px;--dur:${dur}s;--delay:${delay}s;font-size:${fs}px">${sym}</span>`;
+    }
+  });
+  return html;
+}
 function renderHome(){
   const grid=document.getElementById("teams-grid");if(!grid)return;
-  let html=TEAMS.map(t=>{
-    const sessions=foCache[t.id]||[];
-    return`<div class="team-tile" onclick="openTeam('${t.id}')"><img src="${t.logo}" alt="${esc(t.name)}" style="max-height:100px;width:auto;max-width:100%" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/><div class="team-abbr-fb" style="display:none">${esc(t.abbr)}</div></div>`;
+  grid.innerHTML = TEAMS.map(t => {
+    const floats = buildHomeTileFloaties(t);
+    return `<div class="home-tile" onclick="openTeam('${t.id}')">`
+         + floats
+         + `<img class="home-tile-logo" src="${t.logo}" alt="${esc(t.name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"/>`
+         + `<div class="home-tile-fb" style="display:none">${esc(t.name)}</div>`
+         + `</div>`;
   }).join("");
-  html+=`<div class="all-tile" onclick="openAllAnalytics()"><div class="all-icon">&#9733;</div><div class="all-name">All Teams Analytics</div><div class="all-sub">compare & overview</div></div>`;
-  grid.innerHTML=html;
 }
 function goHome(){showScreen("home");renderHome();}
 
@@ -2236,6 +2535,160 @@ document.addEventListener("pointerdown", ppPrimeAudio, {once:true, passive:true}
 
 
 
+// Build the inner <svg>...</svg> markup for one sparkle symbol at a given size.
+// Used by both renderPPHome (large floaties on a team's home page) and renderHome
+// (small subtle floaties on each team tile in the landing grid).
+// Symbols: scope, x  (assassin) | paw (panthers etc) | cat (kitties) | diamond (lady diamonds)
+//          whiskers (purrfect)  | glitter_paw (ibk)  | scratch (claw katz)
+function buildSparkleSvg(sym, size){
+  if(sym === "scope"){
+    return `<svg viewBox="0 0 100 100" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <circle cx="50" cy="50" r="30" fill="none" stroke="#000" stroke-width="3"/>
+      <circle cx="50" cy="50" r="14" fill="none" stroke="#000" stroke-width="3"/>
+      <line x1="50" y1="2"  x2="50" y2="36" stroke="#000" stroke-width="3" stroke-linecap="round"/>
+      <line x1="50" y1="64" x2="50" y2="98" stroke="#000" stroke-width="3" stroke-linecap="round"/>
+      <line x1="2"  y1="50" x2="36" y2="50" stroke="#000" stroke-width="3" stroke-linecap="round"/>
+      <line x1="64" y1="50" x2="98" y2="50" stroke="#000" stroke-width="3" stroke-linecap="round"/>
+    </svg>`;
+  }
+  if(sym === "x"){
+    const s = Math.round(size*0.7);
+    return `<svg viewBox="0 0 24 24" width="${s}" height="${s}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <line x1="5" y1="5" x2="19" y2="19" stroke="#000" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="19" y1="5" x2="5" y2="19" stroke="#000" stroke-width="2.5" stroke-linecap="round"/>
+    </svg>`;
+  }
+  if(sym === "paw"){
+    const rot = Math.floor(Math.random()*60-30);
+    return `<svg viewBox="0 0 100 100" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="transform:rotate(${rot}deg)">
+      <ellipse cx="50" cy="68" rx="24" ry="22" fill="#ff6dbf"/>
+      <ellipse cx="22" cy="44" rx="9" ry="13" fill="#ff6dbf" transform="rotate(-22 22 44)"/>
+      <ellipse cx="40" cy="22" rx="9" ry="13" fill="#ff6dbf" transform="rotate(-8 40 22)"/>
+      <ellipse cx="60" cy="22" rx="9" ry="13" fill="#ff6dbf" transform="rotate(8 60 22)"/>
+      <ellipse cx="78" cy="44" rx="9" ry="13" fill="#ff6dbf" transform="rotate(22 78 44)"/>
+    </svg>`;
+  }
+  if(sym === "cat"){
+    const rot = Math.floor(Math.random()*30-15);
+    return `<svg viewBox="0 0 100 100" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="transform:rotate(${rot}deg)" stroke="#ff6dbf" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none">
+      <path d="M22 36 Q22 18 30 14 Q33 22 38 32"/>
+      <path d="M62 32 Q67 22 70 14 Q78 18 78 36"/>
+      <path d="M30 50 Q36 44 42 50"/>
+      <path d="M58 50 Q64 44 70 50"/>
+      <path d="M46 60 Q48 57 50 60 Q52 57 54 60 L50 67 Z" fill="#ff6dbf" stroke-width="1.5"/>
+      <path d="M44 71 Q47 74 50 71 Q53 74 56 71"/>
+      <path d="M40 64 Q28 63 14 60"/>
+      <path d="M40 68 Q26 69 12 70"/>
+      <path d="M40 72 Q28 73 14 78"/>
+      <path d="M60 64 Q72 63 86 60"/>
+      <path d="M60 68 Q74 69 88 70"/>
+      <path d="M60 72 Q72 73 86 78"/>
+    </svg>`;
+  }
+  if(sym === "diamond"){
+    const rot = Math.floor(Math.random()*30-15);
+    return `<svg viewBox="0 0 100 100" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="transform:rotate(${rot}deg)">
+      <polygon points="8,38 92,38 50,92" fill="#e91e8c"/>
+      <polygon points="25,18 75,18 92,38 8,38" fill="#ff85c5"/>
+      <polygon points="30,32 70,32 75,18 25,18" fill="#ffc5e0"/>
+      <polygon points="32,22 44,22 38,28" fill="rgba(255,255,255,0.55)"/>
+      <polygon points="25,18 75,18 92,38 50,92 8,38" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.5"/>
+      <line x1="8" y1="38" x2="92" y2="38" stroke="rgba(255,255,255,0.55)" stroke-width="1"/>
+      <line x1="30" y1="38" x2="50" y2="92" stroke="rgba(255,255,255,0.32)" stroke-width="0.7"/>
+      <line x1="70" y1="38" x2="50" y2="92" stroke="rgba(255,255,255,0.32)" stroke-width="0.7"/>
+    </svg>`;
+  }
+  if(sym === "whiskers"){
+    const rot = Math.floor(Math.random()*20-10);
+    return `<svg viewBox="0 0 100 100" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="transform:rotate(${rot}deg)">
+      <path d="M50 56 C 46 52, 42 49, 42 46 C 42 43, 45 42, 47 44 C 48 45, 49 46, 50 47 C 51 46, 52 45, 53 44 C 55 42, 58 43, 58 46 C 58 49, 54 52, 50 56 Z" fill="#f89878"/>
+      <path d="M40 47 Q 24 42, 6  38" stroke="#f89878" stroke-width="3" stroke-linecap="round" fill="none"/>
+      <path d="M40 51 Q 22 51, 4  53" stroke="#f89878" stroke-width="3" stroke-linecap="round" fill="none"/>
+      <path d="M40 55 Q 24 60, 6  66" stroke="#f89878" stroke-width="3" stroke-linecap="round" fill="none"/>
+      <path d="M60 47 Q 76 42, 94 38" stroke="#f89878" stroke-width="3" stroke-linecap="round" fill="none"/>
+      <path d="M60 51 Q 78 51, 96 53" stroke="#f89878" stroke-width="3" stroke-linecap="round" fill="none"/>
+      <path d="M60 55 Q 76 60, 94 66" stroke="#f89878" stroke-width="3" stroke-linecap="round" fill="none"/>
+    </svg>`;
+  }
+  if(sym === "glitter_paw"){
+    const rot  = Math.floor(Math.random()*60-30);
+    const pid  = `ibkGlit_${Math.random().toString(36).slice(2,9)}`;
+    return `<svg viewBox="0 0 100 100" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="transform:rotate(${rot}deg)">
+      <defs>
+        <pattern id="${pid}" patternUnits="userSpaceOnUse" width="14" height="14">
+          <rect width="14" height="14" fill="#ff5fb8"/>
+          <circle cx="2"  cy="3"  r="0.7" fill="#ffffff" opacity="0.95"/>
+          <circle cx="9"  cy="2"  r="0.5" fill="#fff0f8" opacity="0.85"/>
+          <circle cx="12" cy="7"  r="0.6" fill="#ffffff" opacity="0.9"/>
+          <circle cx="5"  cy="8"  r="0.4" fill="#ffd6ed" opacity="0.7"/>
+          <circle cx="11" cy="11" r="0.7" fill="#ffffff" opacity="0.95"/>
+          <circle cx="3"  cy="12" r="0.5" fill="#fff0f8" opacity="0.8"/>
+          <circle cx="7"  cy="5"  r="0.3" fill="#ffffff" opacity="0.6"/>
+          <circle cx="6"  cy="11" r="0.3" fill="#ffd6ed" opacity="0.6"/>
+          <circle cx="13" cy="3"  r="0.4" fill="#ffffff" opacity="0.75"/>
+          <circle cx="1"  cy="7"  r="0.4" fill="#fff0f8" opacity="0.7"/>
+        </pattern>
+      </defs>
+      <ellipse cx="48" cy="70" rx="28" ry="24" fill="url(#${pid})"/>
+      <ellipse cx="20" cy="42" rx="10" ry="14" fill="url(#${pid})" transform="rotate(-22 20 42)"/>
+      <ellipse cx="40" cy="22" rx="10" ry="14" fill="url(#${pid})" transform="rotate(-8 40 22)"/>
+      <ellipse cx="62" cy="22" rx="10" ry="14" fill="url(#${pid})" transform="rotate(8 62 22)"/>
+      <ellipse cx="82" cy="42" rx="10" ry="14" fill="url(#${pid})" transform="rotate(22 82 42)"/>
+    </svg>`;
+  }
+  if(sym === "scratch"){
+    const rot = Math.floor(Math.random()*60-30);
+    function makeJaggedClaw(sx, sy, ex, ey, maxW){
+      const N = 16;
+      const dx = ex - sx, dy = ey - sy;
+      const len = Math.sqrt(dx*dx + dy*dy);
+      const ux = dx/N, uy = dy/N;
+      const px = -dy/len, py = dx/len;
+      const upper = [], lower = [];
+      for(let i = 0; i <= N; i++){
+        const t = i/N;
+        const baseW = maxW * Math.sin(Math.PI * t);
+        const wU = baseW * (0.4 + Math.random() * 1.0);
+        const wL = baseW * (0.4 + Math.random() * 1.0);
+        const cx = sx + ux * i, cy = sy + uy * i;
+        upper.push([cx + px * wU, cy + py * wU]);
+        lower.push([cx - px * wL, cy - py * wL]);
+      }
+      let path = `M ${upper[0][0].toFixed(1)} ${upper[0][1].toFixed(1)}`;
+      for(let i = 1; i <= N; i++) path += ` L ${upper[i][0].toFixed(1)} ${upper[i][1].toFixed(1)}`;
+      for(let i = N; i >= 0; i--) path += ` L ${lower[i][0].toFixed(1)} ${lower[i][1].toFixed(1)}`;
+      return path + " Z";
+    }
+    const path1 = makeJaggedClaw(8, 78, 50, 16, 7);
+    const path2 = makeJaggedClaw(28, 88, 70, 26, 8);
+    const path3 = makeJaggedClaw(48, 94, 88, 34, 7.5);
+    return `<svg viewBox="0 0 100 100" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="transform:rotate(${rot}deg)">
+      <path d="${path1}" fill="#ff6dbf"/>
+      <path d="${path2}" fill="#ff6dbf"/>
+      <path d="${path3}" fill="#ff6dbf"/>
+    </svg>`;
+  }
+  return ""; // fallback: caller will treat as unicode glyph
+}
+// Pick the sparkle symbol set for a team's sparkleStyle.
+function getSparkleSyms(team){
+  switch(team.sparkleStyle){
+    case "silver":         return ["✦","✧","◆","♦","✩","✺"];
+    case "assassin":       return ["scope","x"];
+    case "paws":           return ["paw"];
+    case "kitties":        return ["paw","cat"];
+    case "claws":          return ["paw","scratch"];
+    case "butterflies":    return ["🦋"];
+    case "pink_diamonds":  return ["diamond"];
+    case "purrfect":       return ["whiskers"];
+    case "glitter_paws":   return ["glitter_paw"];
+    default:               return ["✦","✧","٭","✩","★"];
+  }
+}
+// SVG-rendered symbols (the rest are unicode glyphs).
+const SVG_SYMS = new Set(["scope","x","paw","cat","diamond","whiskers","glitter_paw","scratch"]);
+
+
 // ── PP HOME (the new 5-tile landing page) ──
 function renderPPHome(container){
   startPPListener();
@@ -2268,8 +2721,8 @@ function renderPPHome(container){
   //   "claws"         → paws + jagged scratch marks (Claw Katz)
   //   "butterflies"   → big floating 🦋 emoji (Lady Lynx)
   //   "pink_diamonds" → SVG pink jewel diamonds (Lady Diamonds)
-  //   "purrfect"      → cat whiskers + peach lips (Miss Purrfect)
-  //   "glitter_paws"  → pink paws with glitter highlights (IBK)
+  //   "purrfect"      → peach cat whiskers only (Miss Purrfect — sampled #f89878 from logo)
+  //   "glitter_paws"  → pink-glitter-textured paws on white-glitter background (IBK)
   //   default         → pink stars (fallback)
   const isAssassin     = team.sparkleStyle === "assassin";
   const isPaws         = team.sparkleStyle === "paws";
@@ -2288,7 +2741,7 @@ function renderPPHome(container){
     isClaws                        ? ["paw","scratch"] :
     isButterflies                  ? ["🦋"] :
     isPinkDiamonds                 ? ["diamond"] :
-    isPurrfect                     ? ["whiskers","lips"] :   // Miss Purrfect: cat whiskers + peach lips
+    isPurrfect                     ? ["whiskers"] :          // Miss Purrfect: peach cat whiskers
     isGlitterPaws                  ? ["glitter_paw"] :        // IBK: pink glitter paws
                                      ["✦","✧","٭","✩","★"];
   // Doubled counts so the page feels nice and busy with floaties
@@ -2306,142 +2759,7 @@ function renderPPHome(container){
     if(useSvg){
       // 36–60px random per icon
       const size = 36 + Math.floor(Math.random()*24);
-      let svg = "";
-      if(sym === "scope"){
-        // Sniper scope reticle: outer ring + inner ring + 4 crosshair lines that
-        // run from the edge through the outer ring and stop at the inner ring,
-        // leaving a clean gap in the middle (matches the reference image).
-        svg = `<svg viewBox="0 0 100 100" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <circle cx="50" cy="50" r="30" fill="none" stroke="#000" stroke-width="3"/>
-          <circle cx="50" cy="50" r="14" fill="none" stroke="#000" stroke-width="3"/>
-          <line x1="50" y1="2"  x2="50" y2="36" stroke="#000" stroke-width="3" stroke-linecap="round"/>
-          <line x1="50" y1="64" x2="50" y2="98" stroke="#000" stroke-width="3" stroke-linecap="round"/>
-          <line x1="2"  y1="50" x2="36" y2="50" stroke="#000" stroke-width="3" stroke-linecap="round"/>
-          <line x1="64" y1="50" x2="98" y2="50" stroke="#000" stroke-width="3" stroke-linecap="round"/>
-        </svg>`;
-      } else if(sym === "x"){
-        svg = `<svg viewBox="0 0 24 24" width="${Math.round(size*0.7)}" height="${Math.round(size*0.7)}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <line x1="5" y1="5" x2="19" y2="19" stroke="#000" stroke-width="2.5" stroke-linecap="round"/>
-          <line x1="19" y1="5" x2="5" y2="19" stroke="#000" stroke-width="2.5" stroke-linecap="round"/>
-        </svg>`;
-      } else if(sym === "paw"){
-        // Paw print: 1 main pad + 4 toes arranged in an arc above. Hot pink.
-        const rot = Math.floor(Math.random()*60-30); // each paw rotated -30°…+30° for personality
-        svg = `<svg viewBox="0 0 100 100" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="transform:rotate(${rot}deg)">
-          <ellipse cx="50" cy="68" rx="24" ry="22" fill="#ff6dbf"/>
-          <ellipse cx="22" cy="44" rx="9" ry="13" fill="#ff6dbf" transform="rotate(-22 22 44)"/>
-          <ellipse cx="40" cy="22" rx="9" ry="13" fill="#ff6dbf" transform="rotate(-8 40 22)"/>
-          <ellipse cx="60" cy="22" rx="9" ry="13" fill="#ff6dbf" transform="rotate(8 60 22)"/>
-          <ellipse cx="78" cy="44" rx="9" ry="13" fill="#ff6dbf" transform="rotate(22 78 44)"/>
-        </svg>`;
-      } else if(sym === "cat"){
-        // Line-art cat face for Pink Kitties — matches the reference image:
-        // arched ears, sleepy ⌒ eyes, two-lobed heart nose, small W mouth, whiskers fanning out.
-        const rot = Math.floor(Math.random()*30-15);
-        svg = `<svg viewBox="0 0 100 100" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="transform:rotate(${rot}deg)" stroke="#ff6dbf" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none">
-          <path d="M22 36 Q22 18 30 14 Q33 22 38 32"/>
-          <path d="M62 32 Q67 22 70 14 Q78 18 78 36"/>
-          <path d="M30 50 Q36 44 42 50"/>
-          <path d="M58 50 Q64 44 70 50"/>
-          <path d="M46 60 Q48 57 50 60 Q52 57 54 60 L50 67 Z" fill="#ff6dbf" stroke-width="1.5"/>
-          <path d="M44 71 Q47 74 50 71 Q53 74 56 71"/>
-          <path d="M40 64 Q28 63 14 60"/>
-          <path d="M40 68 Q26 69 12 70"/>
-          <path d="M40 72 Q28 73 14 78"/>
-          <path d="M60 64 Q72 63 86 60"/>
-          <path d="M60 68 Q74 69 88 70"/>
-          <path d="M60 72 Q72 73 86 78"/>
-        </svg>`;
-      } else if(sym === "diamond"){
-        // Pink jewel diamond with FLAT TOP (round brilliant cut viewed from front).
-        // Shape: flat table on top → angled crown sloping out to widest girdle →
-        // pavilion converging to a point at the bottom. Matches the diamonds in the Lady Diamonds logo.
-        const rot = Math.floor(Math.random()*30-15);
-        svg = `<svg viewBox="0 0 100 100" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="transform:rotate(${rot}deg)">
-          <polygon points="8,38 92,38 50,92" fill="#e91e8c"/>
-          <polygon points="25,18 75,18 92,38 8,38" fill="#ff85c5"/>
-          <polygon points="30,32 70,32 75,18 25,18" fill="#ffc5e0"/>
-          <polygon points="32,22 44,22 38,28" fill="rgba(255,255,255,0.55)"/>
-          <polygon points="25,18 75,18 92,38 50,92 8,38" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="1.5"/>
-          <line x1="8" y1="38" x2="92" y2="38" stroke="rgba(255,255,255,0.55)" stroke-width="1"/>
-          <line x1="30" y1="38" x2="50" y2="92" stroke="rgba(255,255,255,0.32)" stroke-width="0.7"/>
-          <line x1="70" y1="38" x2="50" y2="92" stroke="rgba(255,255,255,0.32)" stroke-width="0.7"/>
-        </svg>`;
-      } else if(sym === "whiskers"){
-        // Cat nose + 3 whiskers each side (Miss Purrfect — matches the "M" in their logo).
-        const rot = Math.floor(Math.random()*20-10);
-        svg = `<svg viewBox="0 0 100 100" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="transform:rotate(${rot}deg)">
-          <path d="M44 46 L56 46 L50 54 Z" fill="#3a2330"/>
-          <line x1="44" y1="48" x2="8" y2="40" stroke="#3a2330" stroke-width="2.8" stroke-linecap="round"/>
-          <line x1="44" y1="51" x2="4" y2="51" stroke="#3a2330" stroke-width="2.8" stroke-linecap="round"/>
-          <line x1="44" y1="54" x2="8" y2="62" stroke="#3a2330" stroke-width="2.8" stroke-linecap="round"/>
-          <line x1="56" y1="48" x2="92" y2="40" stroke="#3a2330" stroke-width="2.8" stroke-linecap="round"/>
-          <line x1="56" y1="51" x2="96" y2="51" stroke="#3a2330" stroke-width="2.8" stroke-linecap="round"/>
-          <line x1="56" y1="54" x2="92" y2="62" stroke="#3a2330" stroke-width="2.8" stroke-linecap="round"/>
-        </svg>`;
-      } else if(sym === "lips"){
-        // Stylized peach lips (Miss Purrfect) — full lips with cupid's bow on top, rounded bottom, cleft line.
-        const rot = Math.floor(Math.random()*20-10);
-        svg = `<svg viewBox="0 0 100 100" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="transform:rotate(${rot}deg)">
-          <path d="M5 50 C10 38 25 32 35 38 C40 38 44 41 47 45 L50 40 L53 45 C56 41 60 38 65 38 C75 32 90 38 95 50 C90 62 75 68 50 62 C25 68 10 62 5 50 Z" fill="#ff8a65"/>
-          <path d="M5 50 Q30 54 50 52 Q70 54 95 50" stroke="#d96042" stroke-width="0.9" fill="none"/>
-          <path d="M22 42 Q32 41 40 44" stroke="rgba(255,255,255,0.45)" stroke-width="0.9" fill="none"/>
-        </svg>`;
-      } else if(sym === "glitter_paw"){
-        // Pink paw print with glitter highlight specks on each pad — IBK aesthetic.
-        const rot = Math.floor(Math.random()*60-30);
-        svg = `<svg viewBox="0 0 100 100" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="transform:rotate(${rot}deg)">
-          <ellipse cx="50" cy="68" rx="24" ry="22" fill="#ff6dbf"/>
-          <ellipse cx="22" cy="44" rx="9" ry="13" fill="#ff6dbf" transform="rotate(-22 22 44)"/>
-          <ellipse cx="40" cy="22" rx="9" ry="13" fill="#ff6dbf" transform="rotate(-8 40 22)"/>
-          <ellipse cx="60" cy="22" rx="9" ry="13" fill="#ff6dbf" transform="rotate(8 60 22)"/>
-          <ellipse cx="78" cy="44" rx="9" ry="13" fill="#ff6dbf" transform="rotate(22 78 44)"/>
-          <ellipse cx="44" cy="60" rx="5" ry="2.5" fill="rgba(255,255,255,0.4)"/>
-          <circle cx="42" cy="62" r="2.2" fill="rgba(255,255,255,0.85)"/>
-          <circle cx="20" cy="40" r="1.3" fill="rgba(255,255,255,0.75)"/>
-          <circle cx="38" cy="18" r="1.3" fill="rgba(255,255,255,0.75)"/>
-          <circle cx="58" cy="18" r="1.3" fill="rgba(255,255,255,0.75)"/>
-          <circle cx="76" cy="40" r="1.3" fill="rgba(255,255,255,0.75)"/>
-        </svg>`;
-      } else if(sym === "scratch"){
-        // Three parallel JAGGED claw scratches in hot pink (Claw Katz).
-        // Each scratch is procedurally generated: a tapered claw centerline with
-        // random width perturbations along both edges → jagged, organic look like the reference.
-        const rot = Math.floor(Math.random()*60-30);
-        function makeJaggedClaw(sx, sy, ex, ey, maxW){
-          const N = 16; // segments along each edge — more = finer jaggies
-          const dx = ex - sx, dy = ey - sy;
-          const len = Math.sqrt(dx*dx + dy*dy);
-          const ux = dx/N, uy = dy/N;
-          const px = -dy/len, py = dx/len; // unit perpendicular
-          const upper = [], lower = [];
-          for(let i = 0; i <= N; i++){
-            const t = i/N;
-            // Width follows a sin(πt) taper: 0 at both tips, max in the middle.
-            const baseW = maxW * Math.sin(Math.PI * t);
-            // Each edge point gets a wide-ranging random width multiplier
-            // for visibly jagged silhouette
-            const wU = baseW * (0.4 + Math.random() * 1.0);
-            const wL = baseW * (0.4 + Math.random() * 1.0);
-            const cx = sx + ux * i, cy = sy + uy * i;
-            upper.push([cx + px * wU, cy + py * wU]);
-            lower.push([cx - px * wL, cy - py * wL]);
-          }
-          let path = `M ${upper[0][0].toFixed(1)} ${upper[0][1].toFixed(1)}`;
-          for(let i = 1; i <= N; i++) path += ` L ${upper[i][0].toFixed(1)} ${upper[i][1].toFixed(1)}`;
-          for(let i = N; i >= 0; i--) path += ` L ${lower[i][0].toFixed(1)} ${lower[i][1].toFixed(1)}`;
-          return path + " Z";
-        }
-        // Three parallel scratches — thicker so jaggedness is visible at sparkle size.
-        const path1 = makeJaggedClaw(8, 78, 50, 16, 7);
-        const path2 = makeJaggedClaw(28, 88, 70, 26, 8);
-        const path3 = makeJaggedClaw(48, 94, 88, 34, 7.5);
-        svg = `<svg viewBox="0 0 100 100" width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="transform:rotate(${rot}deg)">
-          <path d="${path1}" fill="#ff6dbf"/>
-          <path d="${path2}" fill="#ff6dbf"/>
-          <path d="${path3}" fill="#ff6dbf"/>
-        </svg>`;
-      }
+      const svg = buildSparkleSvg(sym, size);
       sparkles += `<span class="pp-sparkle pp-sparkle-icon" style="left:${left}%;top:${top}%;--dx:${dx}px;--dy:${dy}px;--dur:${dur}s;--delay:${delay}s">${svg}</span>`;
     }else{
       // Unicode glyphs: butterflies render bigger (28-50px) than star/diamond glyphs (10-20px)
