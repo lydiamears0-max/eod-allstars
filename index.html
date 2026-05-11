@@ -1422,6 +1422,8 @@ window.__resetAllData = async function(confirmText){
   }
   const SUBS = ["stunt_sessions","stunt_notes","pp_fullouts","pp_stars","pp_misc","coordination","fulloutSessions","plans","checklist"];
   const teamIds = (typeof TEAMS !== "undefined") ? TEAMS.map(t=>t.id) : [];
+  // Also clear any synthetic team buckets (e.g. shared colour-house store)
+  teamIds.push("_shared_houses");
   console.log("🧹 Resetting all data for", teamIds.length, "teams…");
   let totalDeleted = 0;
   for(const tid of teamIds){
@@ -1498,6 +1500,7 @@ async function adminResetAll(){
   try{
     const SUBS = ["stunt_sessions","stunt_notes","pp_fullouts","pp_stars","pp_misc","coordination","fulloutSessions","plans","checklist"];
     const teamIds = TEAMS.map(t=>t.id);
+    teamIds.push("_shared_houses");
     let totalDeleted = 0;
     for(const tid of teamIds){
       for(const sub of SUBS){
@@ -2970,7 +2973,16 @@ function ppCol(teamId){teamId=teamId||curTeamId||"pink_panthers";return db.colle
 function ppNotesCol(teamId){teamId=teamId||curTeamId||"pink_panthers";return db.collection("teams").doc(teamId).collection("stunt_notes");}
 function ppFoCol(teamId){teamId=teamId||curTeamId||"pink_panthers";return db.collection("teams").doc(teamId).collection("pp_fullouts");}
 function ppStarsCol(teamId){teamId=teamId||curTeamId||"pink_panthers";return db.collection("teams").doc(teamId).collection("pp_stars");}
-function ppHousesDoc(teamId){teamId=teamId||curTeamId||"pink_panthers";return db.collection("teams").doc(teamId).collection("pp_misc").doc("houses");}
+// Pink Panthers + Lady Diamonds + Claw Katz pool their colour-house points into one
+// shared store, so adding from any of those three pages updates the same totals.
+const SHARED_HOUSES_TEAMS = new Set(["pink_panthers","diamonds","claw_katz"]);
+function ppHousesDoc(teamId){
+  teamId=teamId||curTeamId||"pink_panthers";
+  if(SHARED_HOUSES_TEAMS.has(teamId)){
+    return db.collection("teams").doc("_shared_houses").collection("pp_misc").doc("houses");
+  }
+  return db.collection("teams").doc(teamId).collection("pp_misc").doc("houses");
+}
 function ppNotesCache(){return window._ppNotes||{};}
 
 let _ppListenerTeamId=null;
